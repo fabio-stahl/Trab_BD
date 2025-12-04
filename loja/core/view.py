@@ -1,9 +1,12 @@
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from django.http import JsonResponse
+import json
 
 @login_required(login_url='/login/')
 def dashboard(request):
@@ -41,3 +44,13 @@ def register_view(request):
         return redirect("login")
 
     return render(request, "register.html")
+
+@csrf_exempt
+def create_table(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+        except Exception as e:
+            print("ERRO no create_table")
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

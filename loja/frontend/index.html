@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concessionária Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <aside class="sidebar">
+            <div class="brand">
+                <h2>Concessionária</h2>
+            </div>
+            
+            <nav class="menu">
+                <button class="menu-item" onclick="showSection('add')">Adicionar dados ao banco</button>
+                <button class="menu-item" onclick="showSection('remove')">Remover dados do banco</button>
+                <button class="menu-item" onclick="showSection('update')">Atualizar dados do banco</button>
+                <button class="menu-item" onclick="showSection('search')">Pesquisar dados do banco</button>
+                
+                <div class="separator"></div>
+                
+                <button class="menu-item" onclick="showSection('mass')">Manipulação em massa</button>
+                <button class="menu-item" onclick="showSection('substring')">Busca por substring</button>
+                
+                <div class="separator"></div>
+
+                <button class="menu-item" onclick="showSection('advanced')">Consultas avançadas</button>
+                <button class="menu-item" onclick="showSection('quantifiers')">Consultas com Quantificadores</button>
+                <button class="menu-item" onclick="showSection('grouping')">Agrupamento e Ordenação</button>
+                
+                <div class="separator"></div>
+
+                <button class="menu-item" onclick="showSection('triggers')">Criação de Gatilhos</button>
+            </nav>
+        </aside>
+
+        <main class="content-area">
+            
+            <header>
+                <h1 id="page-title">Bem-vindo ao Sistema</h1>
+                <p id="page-subtitle">Selecione uma opção no menu lateral para começar.</p>
+            </header>
+
+            <section id="interface-container" class="card">
+                
+                <div id="entity-selector-group" class="form-group hidden">
+                    <label>Selecione a Tabela:</label>
+                    <select id="entity-select" onchange="updateFormFields()">
+                        <option value="cliente">Cliente</option>
+                        <option value="carro">Carro</option>
+                        <option value="negociacao">Negociação</option>
+                    </select>
+                </div>
+
+                <div id="dynamic-inputs" class="input-grid">
+                    </div>
+
+                <div id="action-area" class="hidden">
+                    <button id="btn-execute" class="btn-primary">Executar Operação</button>
+                </div>
+            </section>
+
+            <section id="results-area" class="card hidden">
+                <h3>Resultados / Logs</h3>
+                <div id="output-content" class="output-box">
+                    </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="/main.js"></script>
+</body>
+</html>
