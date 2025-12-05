@@ -17,8 +17,8 @@ export default function Sidebar({ onSelect }) {
   return (
     <aside className="sidebar">
       <div className="brand" >
-        <label className="text-2xl font-black">Concessionária</label>
-      </div>0
+        <label className="text-3xl font-sans">Concessionária</label>
+      </div>
       <nav className="menu">
         {menuItems.map((m) => (
           <button

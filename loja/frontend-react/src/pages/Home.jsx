@@ -6,7 +6,6 @@ import DynamicForm from "../components/DynamicForm";
 import ResultsBox from "../components/ResultsBox";
 import "../styles/index.css"; 
 
-
 export default function Home() {
   const [action, setAction] = useState("");
   const [entity, setEntity] = useState("cliente");
@@ -40,20 +39,11 @@ export default function Home() {
       <Sidebar onSelect={handleMenuClick} />
 
       <main className="content-area">
-        <Header title={ action ? (action === "add" ? "Adicionar Registro" : action === "update" ? "Atualizar Registro" : action ) : "Bem-vindo" }
-                subtitle={ action ? "" : "Selecione uma operação no menu lateral." } />
+        <Header title={ action ? (action === "add" ? "Adicionar Registro" : action === "update" ? "Atualizar Registro" : action == "remove" ? "Remover Dados" : action) : ""}
+                subtitle={ action ? "" : "" } />
 
         <section id="interface-container" className={`card ${!showInterface ? "hidden" : ""}`}>
-          <div id="entity-selector-group" className={`form-group ${!["add","update","remove","search"].includes(action) ? "hidden" : ""}`}>
-            <label>Tabela Alvo:</label>
-            <select id="entity-select" value={entity} onChange={(e) => setEntity(e.target.value)}>
-              <option value="cliente">Cliente</option>
-              <option value="carro">Carro</option>
-              <option value="negociacao">Negociação</option>
-              <option value="funcionario">Funcionário</option>
-            </select>
-          </div>
-
+        
           <div id="dynamic-inputs" className="input-grid">
             <DynamicForm
               action={action}

@@ -9,10 +9,15 @@ import { entities } from "../data/entities";
  * - onExecute(payload) => executes request
  * - onEntityChange(entity) optional
  */
-export default function DynamicForm({ action, entity, onEntityChange, onExecute }) {
+export default function DynamicForm({
+  action,
+  entity,
+  onEntityChange,
+  onExecute,
+}) {
   const [selectedEntity, setSelectedEntity] = useState(entity || "cliente");
   const [values, setValues] = useState({});
-  const fields = (entities[selectedEntity] || []);
+  const fields = entities[selectedEntity] || [];
 
   function handleInputChange(e) {
     const { name, value } = e.target;
@@ -43,7 +48,8 @@ export default function DynamicForm({ action, entity, onEntityChange, onExecute 
       Object.assign(payloadData, values);
     }
 
-    onExecute && onExecute({ action, entity: selectedEntity, data: payloadData });
+    onExecute &&
+      onExecute({ action, entity: selectedEntity, data: payloadData });
   }
 
   // Render helpers
@@ -53,9 +59,10 @@ export default function DynamicForm({ action, entity, onEntityChange, onExecute 
         <div className="form-group" style={{ marginBottom: 16 }}>
           <label>Tabela Alvo:</label>
           <select value={selectedEntity} onChange={handleEntitySelect}>
-            {Object.keys(entities).map((k) => (
-              <option key={k} value={k}>{k}</option>
-            ))}
+            <option value="cliente">Cliente</option>
+            <option value="carro">Carro</option>
+            <option value="vendedor">Vendedor</option>
+            <option value="gerente">Gerente</option>
           </select>
         </div>
 
@@ -76,7 +83,9 @@ export default function DynamicForm({ action, entity, onEntityChange, onExecute 
         </div>
 
         <div style={{ marginTop: 20 }}>
-          <button className="btn-primary" type="submit">Executar</button>
+          <button className="btn-primary" type="submit">
+            Executar
+          </button>
         </div>
       </form>
     );
@@ -96,7 +105,9 @@ export default function DynamicForm({ action, entity, onEntityChange, onExecute 
           />
         </div>
         <div style={{ marginTop: 20 }}>
-          <button className="btn-primary" type="submit">Executar</button>
+          <button className="btn-primary" type="submit">
+            Executar
+          </button>
         </div>
       </form>
     );
@@ -116,7 +127,9 @@ export default function DynamicForm({ action, entity, onEntityChange, onExecute 
           />
         </div>
         <div style={{ marginTop: 20 }}>
-          <button className="btn-primary" type="submit">Executar</button>
+          <button className="btn-primary" type="submit">
+            Executar
+          </button>
         </div>
       </form>
     );
@@ -127,7 +140,12 @@ export default function DynamicForm({ action, entity, onEntityChange, onExecute 
       <div>
         <p>Clique em executar para popular o banco.</p>
         <div style={{ marginTop: 20 }}>
-          <button className="btn-primary" onClick={() => onExecute({ action, entity: selectedEntity, data: {} })}>
+          <button
+            className="btn-primary"
+            onClick={() =>
+              onExecute({ action, entity: selectedEntity, data: {} })
+            }
+          >
             Executar
           </button>
         </div>
@@ -140,7 +158,12 @@ export default function DynamicForm({ action, entity, onEntityChange, onExecute 
       <div>
         <p>Resetar ou inicializar o banco de dados.</p>
         <div style={{ marginTop: 20 }}>
-          <button className="btn-primary" onClick={() => onExecute({ action, entity: selectedEntity, data: {} })}>
+          <button
+            className="btn-primary"
+            onClick={() =>
+              onExecute({ action, entity: selectedEntity, data: {} })
+            }
+          >
             Executar
           </button>
         </div>
@@ -149,5 +172,9 @@ export default function DynamicForm({ action, entity, onEntityChange, onExecute 
   }
 
   // default fallback
-  return <div><p>Selecione uma ação no menu lateral.</p></div>;
+  return (
+    <div>
+      <p>Selecione uma ação no menu lateral.</p>
+    </div>
+  );
 }
