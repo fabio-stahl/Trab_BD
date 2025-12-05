@@ -16,13 +16,15 @@ def criar_tabelas(cursor):
         Endereco TEXT NOT NULL
     );
     """)
+
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Telefone (
-        Numero INTEGER PRIMARY KEY,
-        CPF INTEGER,
-        FOREIGN KEY (CPF) REFERENCES Cliente(CPF) ON DELETE CASCADE
+    CREATE TABLE IF NOT EXISTS Funcionario (
+        Matricula INTEGER PRIMARY KEY,
+        Nome TEXT NOT NULL,
+        Salario REAL
     );
     """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Telefone (
         Numero INTEGER PRIMARY KEY,
