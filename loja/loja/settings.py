@@ -1,7 +1,5 @@
 from pathlib import Path
-import os
 
-# Aponta para a pasta onde está o manage.py
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-teste-rapido'
@@ -15,31 +13,37 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core', # Seu app principal
-    "corsheaders",
+
+    'corsheaders',
+    'core',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+
+    # CORS deve vir aqui
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware', # Importante para segurança
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
 ]
-
-ROOT_URLCONF = 'loja.urls'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+
+ROOT_URLCONF = 'loja.urls'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'frontend'], # Aponta para sua pasta de HTML
+        'DIRS': [],   # <-- sem React
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -67,10 +71,5 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-
-# Isso diz ao Django para procurar CSS e JS dentro de frontend/static
-STATICFILES_DIRS = [
-    BASE_DIR / 'frontend/static', 
-]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
