@@ -20,7 +20,7 @@ def criar_tabelas(cursor):
     CREATE TABLE IF NOT EXISTS Telefone (
         Numero INTEGER PRIMARY KEY,
         CPF INTEGER,
-        FOREIGN KEY (CPF) REFERENCES Cliente(CPF)
+        FOREIGN KEY (CPF) REFERENCES Cliente(CPF) ON DELETE CASCADE
     );
     """)
     cursor.execute("""
@@ -144,6 +144,27 @@ def atualizar_funcionario(cursor, matricula, nome, salario):
 
 def atualizar_carro(cursor, chassi, modelo, cor):
     cursor.execute("UPDATE Carro SET Modelo = ?, Cor = ? WHERE Chassi = ?", (modelo, cor, chassi))
+
+def atualizar_telefone(cursor, cpf, numero_antigo, novo_numero):
+    cursor.execute("""
+        UPDATE Telefone
+        SET Numero = ?
+        WHERE CPF = ? AND Numero = ?
+    """, (novo_numero, cpf, numero_antigo))
+    print("DEBUG atualizar_telefone - linhas afetadas:", cursor.rowcount)
+
+
+def atualizar_negociacao(cursor, id_negociacao, matricula, chassi, cpf, data, valor):
+    cursor.execute("""
+        UPDATE Negociacao 
+        SET Matricula = ?, 
+            Chassi = ?, 
+            CPF = ?, 
+            Data_Negociacao = ?, 
+            Valor_Total = ?
+        WHERE ID_Negociacao = ?
+    """, (matricula, chassi, cpf, data, valor, id_negociacao))
+    print("DEBUG atualizar_negociacao - linhas afetadas:", cursor.rowcount)
 
 # --- 5. OPERAÇÕES DE REMOÇÃO (DELETE) --- [cite: 32]
 
