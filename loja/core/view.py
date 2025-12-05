@@ -7,11 +7,15 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.http import JsonResponse
 import json
-from loja.backend import controller
+from backend import controller
 
 @login_required(login_url='/login/')
 def dashboard(request):
     return render(request, 'dashboard.html')
+
+def index(request):
+    """Renderiza a página única do Frontend"""
+    return render(request, 'index.html')
 
 def login_view(request):
     if request.method == "POST":
