@@ -161,21 +161,36 @@ def deletar_negociacao(cursor, id_negociacao):
     cursor.execute("DELETE FROM Negociacao WHERE ID_Negociacao = ?", (id_negociacao,))
 
 # --- 6. OPERAÇÕES ESPECIAIS (REQUISITOS AVANÇADOS) ---
+def carga_clientes_em_massa(cursor, lista_dados):
+    """
+    Recebe uma lista de tuplas: [(CPF, Nome, Endereco), ...]
+    """
+    query = "INSERT OR IGNORE INTO Cliente (CPF, Nome, Endereco) VALUES (?, ?, ?)"
+    cursor.executemany(query, lista_dados)
 
-def carga_em_massa(cursor):
+def carga_carros_em_massa(cursor, lista_dados):
     """
-    Requisito: Receba uma lista de objetos e insira todos no banco. [cite: 38]
+    Recebe uma lista de tuplas: [(Chassi, Modelo, Cor), ...]
     """
-    lista_carros = [
-        ('CH-9001', 'Civic', 'Prata'),
-        ('CH-9002', 'Corolla', 'Branco'),
-        ('CH-9003', 'Mustang', 'Vermelho'),
-        ('CH-9004', 'Fusca', 'Azul'),
-        ('CH-9005', 'Gol', 'Preto')
-    ]
-    
-    # Inserção otimizada executando lista de uma vez
-    cursor.executemany("INSERT OR IGNORE INTO Carro (Chassi, Modelo, Cor) VALUES (?, ?, ?)", lista_carros)
+    query = "INSERT OR IGNORE INTO Carro (Chassi, Modelo, Cor) VALUES (?, ?, ?)"
+    cursor.executemany(query, lista_dados)
+
+def carga_funcionarios_em_massa(cursor, lista_dados):
+    """
+    Recebe uma lista de tuplas: [(Matricula, Nome, Salario), ...]
+    """
+    query = "INSERT OR IGNORE INTO Funcionario (Matricula, Nome, Salario) VALUES (?, ?, ?)"
+    cursor.executemany(query, lista_dados)
+
+def carga_negociacoes_em_massa(cursor, lista_dados):
+    """
+    Recebe lista: [(Matricula, Chassi, CPF, Data, Valor), ...]
+    """
+    query = """
+        INSERT INTO Negociacao (Matricula, Chassi, CPF, Data_Negociacao, Valor_Total)
+        VALUES (?, ?, ?, ?, ?)
+    """
+    cursor.executemany(query, lista_dados)
 
 def buscar_carro_substring(cursor, termo):
     """
@@ -183,6 +198,22 @@ def buscar_carro_substring(cursor, termo):
     """
     termo_formatado = f"%{termo}%"
     cursor.execute("SELECT * FROM Carro WHERE Modelo LIKE ?", (termo_formatado,))
+    return cursor.fetchall()
+
+def buscar_cliente_substring(cursor, termo):
+    """
+    Busca clientes cujo NOME contenha o termo pesquisado.
+    """
+    termo_formatado = f"%{termo}%"
+    cursor.execute("SELECT * FROM Cliente WHERE Nome LIKE ?", (termo_formatado,))
+    return cursor.fetchall()
+
+def buscar_funcionario_substring(cursor, termo):
+    """
+    Busca funcionários cujo NOME contenha o termo pesquisado.
+    """
+    termo_formatado = f"%{termo}%"
+    cursor.execute("SELECT * FROM Funcionario WHERE Nome LIKE ?", (termo_formatado,))
     return cursor.fetchall()
 
 def relatorio_avancado(cursor):

@@ -32,7 +32,7 @@ body {
     font-size: 1.2rem; 
     text-transform: uppercase; 
     letter-spacing: 1px; 
-    color: #e74c3c; /* Vermelho destaque */
+    color: #673ce7; /* Roxo destaque */
 }
 
 .menu { flex-grow: 1; overflow-y: auto; padding-top: 10px; }

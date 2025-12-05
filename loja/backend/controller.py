@@ -117,9 +117,26 @@ def handle_request(action, entity=None, data=None):
             response_data = {'message': 'Carga em massa (Dummy Data) realizada!'}
 
         elif action == 'substring':
-            # Busca substring (Case Insensitive)
-            rows = service.buscar_carro_substring(cursor, get_val('termo'))
-            response_data = [{'chassi': r[0], 'modelo': r[1], 'cor': r[2]} for r in rows]
+            # Recupera o termo enviado pelo input 'termo'
+            termo = get_val('termo')
+            
+            if not termo:
+                response_data = {'error': 'Por favor, digite um termo para buscar.'}
+            
+            elif entity == 'carro':
+                rows = service.buscar_carro_substring(cursor, termo)
+                response_data = [{'chassi': r[0], 'modelo': r[1], 'cor': r[2]} for r in rows]
+            
+            elif entity == 'cliente':
+                rows = service.buscar_cliente_substring(cursor, termo)
+                response_data = [{'cpf': r[0], 'nome': r[1], 'endereco': r[2]} for r in rows]
+
+            elif entity == 'funcionario':
+                rows = service.buscar_funcionario_substring(cursor, termo)
+                response_data = [{'matricula': r[0], 'nome': r[1], 'salario': r[2]} for r in rows]
+            
+            else:
+                response_data = {'error': f'Busca por substring não implementada para a entidade: {entity}'}
 
         elif action == 'advanced':
             # Consulta com JOINs diferentes
