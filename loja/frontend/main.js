@@ -17,7 +17,6 @@ const entityFields = {
         { id: 'nome', label: 'Nome', type: 'text' },
         { id: 'salario', label: 'Salário', type: 'number' }
     ],
-    // Adicionei os relacionamentos específicos
     'gerente': [
         { id: 'matricula', label: 'Matrícula (Já existente)', type: 'number' },
         { id: 'vale_alimentacao', label: 'Vale Alimentação', type: 'number' }
@@ -101,132 +100,175 @@ function renderEntityInputs() {
     }
 
     fields.forEach(field => {
-        const div = document.createElement('div');
-        div.className = 'form-group'; // Classe do seu CSS
-        div.innerHTML = `
-            <label>${field.label}</label>
-            <input type="${field.type}" id="inp-${field.id}" class="form-control" placeholder="${field.label}">
-        `;
-        container.appendChild(div);
+        const input = document.createElement('input');
+        input.id = field.id;
+        input.type = field.type;
+        input.placeholder = field.label;
+        input.required = true; // Ensure the field is required
+
+        // Add input validation for numbers
+        if (field.type === 'number') {
+            input.addEventListener('input', function() {
+                if (this.value < 0) {
+                    this.setCustomValidity('O valor não pode ser negativo.');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+        }
+
+        container.appendChild(input);
     });
-
-    if (currentAction === 'update') {
-        const warning = document.createElement('p');
-        warning.style.color = 'orange';
-        warning.style.fontSize = '0.9em';
-        warning.innerText = '* O primeiro campo será usado para encontrar o registro a ser atualizado.';
-        container.prepend(warning);
-    }
 }
 
-function renderSingleInput(id, placeholder) {
-    const container = document.getElementById('dynamic-inputs');
-    container.innerHTML = `
-        <div class="form-group" style="grid-column: 1 / -1;">
-            <label>${placeholder}</label>
-            <input type="text" id="inp-${id}" class="form-control" placeholder="Digite aqui...">
-        </div>
-    `;
-}
+/* Compatibilidade com index.html (wrappers) */
+function handleMenuClick(action) { showSection(action); }
+function renderInputs() { renderEntityInputs(); }
 
-function handleSpecialActions(action, titleEl, subtitleEl) {
+/* Renderiza um único input (para search/remove por ID) */
+function renderSingleInput(id, label) {
     const container = document.getElementById('dynamic-inputs');
     container.innerHTML = '';
-
-    if (action === 'mass') {
-        titleEl.innerText = 'Carga em Massa';
-        subtitleEl.innerText = 'Inserir dados fictícios de teste.';
-        container.innerHTML = '<p>Clique em executar para popular o banco.</p>';
-    } 
-    else if (action === 'substring') {
-        titleEl.innerText = 'Busca por Nome (Modelo)';
-        renderSingleInput('termo', 'Digite parte do nome...');
-    }
-    else if (action === 'init_db') {
-        titleEl.innerText = 'Criar Tabelas';
-        subtitleEl.innerText = 'Resetar ou Inicializar o Banco de Dados.';
-    }
-    else {
-        titleEl.innerText = 'Consultas Avançadas';
-        subtitleEl.innerText = 'Visualizar relatórios complexos.';
-    }
+    const input = document.createElement('input');
+    input.id = id;
+    input.type = 'text';
+    input.placeholder = label;
+    input.required = true;
+    container.appendChild(input);
 }
 
-// --- 5. COMUNICAÇÃO COM O BACKEND (Fetch) ---
-
-document.getElementById('btn-execute').addEventListener('click', () => {
-    const entity = document.getElementById('entity-select').value;
-    const outputDiv = document.getElementById('output-content');
-    const resultsArea = document.getElementById('results-area');
-
-    // Coleta dados dos inputs (Automático)
-    const data = {};
-    document.querySelectorAll('[id^="inp-"]').forEach(input => {
-        const key = input.id.replace('inp-', '');
-        data[key] = input.value;
-    });
-
-    // Feedback de Carregamento
-    resultsArea.classList.remove('hidden');
-    outputDiv.innerHTML = 'Processando...';
-
-    // O Payload segue estritamente o que seu controller.py espera
-    const payload = {
-        action: currentAction,
-        entity: entity,
-        data: data
+/* Trata ações especiais (mass, substring, advanced, quantifiers, grouping) */
+function handleSpecialActions(action, titleEl, subtitleEl) {
+    document.getElementById('dynamic-inputs').innerHTML = '';
+    const subtitleMap = {
+        'mass': 'Executa carga em massa de dados dummy.',
+        'substring': 'Digite o termo para buscar (substring).',
+        'advanced': 'Executa relatório avançado (JOINs).',
+        'quantifiers': 'Executa consulta com quantificadores.',
+        'grouping': 'Relatório de vendas por vendedor.'
     };
+    titleEl.innerText = {
+        'mass': 'Carga em Massa',
+        'substring': 'Busca por Substring',
+        'advanced': 'Relatório Avançado',
+        'quantifiers': 'Consultas com Quantificadores',
+        'grouping': 'Agrupamento e Relatórios'
+    }[action] || 'Operação';
+    subtitleEl.innerText = subtitleMap[action] || '';
 
-    fetch('/api/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    })
-    .then(response => response.json())
-    .then(json => {
-        // AQUI ESTÁ O SEGREDO DA VISUALIZAÇÃO
-        // Se for uma lista, desenha tabela. Se for objeto, mostra texto.
-        if (Array.isArray(json)) {
-            outputDiv.innerHTML = createTable(json);
-        } else if (json.message) {
-            outputDiv.innerHTML = `<div style="color: green; font-weight: bold;">${json.message}</div>`;
-        } else if (json.error) {
-            outputDiv.innerHTML = `<div style="color: red; font-weight: bold;">ERRO: ${json.error}</div>`;
-        } else {
-            outputDiv.innerText = JSON.stringify(json, null, 2);
-        }
-    })
-    .catch(err => {
-        outputDiv.innerHTML = `<div style="color: red;">Erro na requisição: ${err}</div>`;
-    });
-});
+    // Se for substring, adiciona um input de termo
+    if (action === 'substring') {
+        const container = document.getElementById('dynamic-inputs');
+        const input = document.createElement('input');
+        input.id = 'termo';
+        input.type = 'text';
+        input.placeholder = 'Termo de busca';
+        input.required = true;
+        container.appendChild(input);
+    }
 
-// --- 6. GERADOR DE TABELAS HTML (Visualização) ---
-function createTable(data) {
-    if (data.length === 0) return '<p>Nenhum dado encontrado.</p>';
-
-    // Pega as chaves do primeiro objeto para fazer o cabeçalho
-    const headers = Object.keys(data[0]);
-    
-    let html = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
-    
-    // Cabeçalho
-    html += '<thead style="background-color: #2c3e50; color: white;"><tr>';
-    headers.forEach(h => {
-        html += `<th style="padding: 10px; border: 1px solid #ddd; text-transform: capitalize;">${h}</th>`;
-    });
-    html += '</tr></thead>';
-
-    // Corpo
-    html += '<tbody>';
-    data.forEach(row => {
-        html += '<tr>';
-        headers.forEach(h => {
-            html += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${row[h]}</td>`;
-        });
-        html += '</tr>';
-    });
-    html += '</tbody></table>';
-
-    return html;
+    // Mostra a área de interface e botão executar
+    document.getElementById('interface-container').classList.remove('hidden');
 }
+
+/* Ajuste seguro do escapeHtml */
+function escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) return '';
+    const s = String(unsafe);
+    return s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/* Melhor tratamento de fetch: sempre retorna objeto (ou lança um erro claro) */
+async function fetchData(url, method, data) {
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json().catch(() => ({ error: 'Resposta JSON inválida' }));
+
+        if (!response.ok) {
+            // inclui mensagem do servidor quando disponível
+            const msg = result && result.error ? result.error : `${response.status} ${response.statusText}`;
+            return { error: msg };
+        }
+        return result;
+    } catch (error) {
+        console.error('Erro ao enviar dados:', error);
+        return { error: String(error) };
+    }
+}
+
+/* Executa a ação atual: monta payload e chama /handler/ */
+async function executeAction() {
+    const entityGroupVisible = !document.getElementById('entity-selector-group').classList.contains('hidden');
+    const entity = entityGroupVisible ? document.getElementById('entity-select').value : null;
+    const data = {};
+
+    // coleta inputs dinamicamente
+    document.querySelectorAll('#dynamic-inputs input').forEach(inp => {
+        data[inp.id] = inp.value;
+    });
+
+    const payload = { action: currentAction, entity: entity, data: data };
+    const res = await fetchData('/handler/', 'POST', payload);
+
+    if (!res) {
+        displayOutput({ error: 'Sem resposta do servidor' });
+        return;
+    }
+    displayOutput(res);
+}
+
+/* Renderiza a saída (objeto, mensagem ou lista) */
+function displayOutput(response) {
+    const resultsArea = document.getElementById('results-area');
+    const output = document.getElementById('output-content');
+    output.innerHTML = '';
+
+    if (response === null) {
+        output.innerText = 'Resposta vazia';
+    } else if (Array.isArray(response) && response.length > 0) {
+        // cria tabela quando array de objetos
+        createTable(response);
+        resultsArea.classList.remove('hidden');
+    } else if (Array.isArray(response) && response.length === 0) {
+        output.innerText = 'Nenhum resultado.';
+        resultsArea.classList.remove('hidden');
+    } else if (typeof response === 'object') {
+        if (response.error) {
+            output.innerHTML = `<div class="error">Erro: ${escapeHtml(response.error)}</div>`;
+        } else if (response.message) {
+            output.innerHTML = `<div class="message">${escapeHtml(response.message)}</div>`;
+        } else {
+            // exibe objeto formatado
+            const pre = document.createElement('pre');
+            pre.innerText = JSON.stringify(response, null, 2);
+            output.appendChild(pre);
+        }
+        resultsArea.classList.remove('hidden');
+    } else {
+        output.innerText = String(response);
+        resultsArea.classList.remove('hidden');
+    }
+}
+
+/* Hook inicial para botões e execução */
+document.addEventListener('DOMContentLoaded', () => {
+    // botao executar
+    const btn = document.getElementById('btn-execute');
+    if (btn) btn.addEventListener('click', executeAction);
+
+    // Inicialmente esconder interface
+    document.getElementById('interface-container').classList.add('hidden');
+    document.getElementById('results-area').classList.add('hidden');
+});

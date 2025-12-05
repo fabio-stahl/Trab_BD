@@ -1,7 +1,9 @@
+import os
 import sqlite3
+from django.conf import settings
 from . import service
 
-DB_PATH = 'db.sqlite3'
+DB_PATH = os.path.join(settings.BASE_DIR, 'db.sqlite3')
 
 def handle_request(action, entity=None, data=None):
     """
