@@ -27,6 +27,8 @@ from backend.service import (
     atualizar_cliente,
     atualizar_funcionario,
     atualizar_carro,
+    atualizar_telefone,
+    atualizar_negociacao,
     # deletes
     deletar_cliente,
     deletar_funcionario,
@@ -175,6 +177,8 @@ def atualizar_registros(cursor, conn):
     print("1 - Cliente")
     print("2 - Funcionário")
     print("3 - Carro")
+    print("4 - Telefone")
+    print("5 - Negociação")
     opc = input("Escolha: ").strip()
 
     if opc == "1":
@@ -184,6 +188,7 @@ def atualizar_registros(cursor, conn):
         atualizar_cliente(cursor, cpf, nome, endereco)
         conn.commit()
         print("✅ Cliente atualizado.")
+
     elif opc == "2":
         matricula = int(input("Matrícula do funcionário: ").strip())
         nome = input("Novo nome: ").strip()
@@ -191,6 +196,7 @@ def atualizar_registros(cursor, conn):
         atualizar_funcionario(cursor, matricula, nome, salario)
         conn.commit()
         print("✅ Funcionário atualizado.")
+
     elif opc == "3":
         chassi = input("Chassi do carro: ").strip()
         modelo = input("Novo modelo: ").strip()
@@ -198,9 +204,60 @@ def atualizar_registros(cursor, conn):
         atualizar_carro(cursor, chassi, modelo, cor)
         conn.commit()
         print("✅ Carro atualizado.")
+
+    elif opc == "4":
+        print("\n✏ Atualizar Telefone")
+        cpf = int(input("CPF do cliente: ").strip())
+        numero_antigo = int(input("Número atual do telefone: ").strip())
+        novo_numero = int(input("Novo número: ").strip())
+        atualizar_telefone(cursor, cpf, numero_antigo, novo_numero)
+        conn.commit()
+        print("✅ Telefone atualizado.")
+
+    elif opc == "5":
+        print("\n✏ Atualizar Negociação")
+
+        # Mostra as negociações para o usuário escolher
+        cursor.execute("SELECT ID_Negociacao, Matricula, Chassi, CPF, Data_Negociacao, Valor_Total FROM Negociacao")
+        negociacoes = cursor.fetchall()
+        if not negociacoes:
+            print("❌ Nenhuma negociação cadastrada.")
+            return
+
+        print("\n📋 Negociações existentes:")
+        for n in negociacoes:
+            print(f"ID={n[0]} | Matricula={n[1]} | Chassi={n[2]} | CPF={n[3]} | Data={n[4]} | Valor={n[5]}")
+
+        id_neg = int(input("\nID da negociação que deseja atualizar: ").strip())
+
+        registro = buscar_negociacao(cursor, id_neg)
+        if not registro:
+            print("❌ Nenhuma negociação encontrada com esse ID.")
+            return
+
+        # registro = (ID_Negociacao, Matricula, Chassi, CPF, Data_Negociacao, Valor_Total)
+        print("\nValores atuais (ENTER mantém o valor):")
+
+        nova_matricula = input(f"Nova matrícula (atual: {registro[1]}): ").strip()
+        novo_chassi   = input(f"Novo chassi (atual: {registro[2]}): ").strip()
+        novo_cpf      = input(f"Novo CPF (atual: {registro[3]}): ").strip()
+        nova_data     = input(f"Nova data (atual: {registro[4]} - formato YYYY-MM-DD): ").strip()
+        novo_valor    = input(f"Novo valor (atual: {registro[5]}): ").strip()
+
+        # Se o usuário der ENTER, mantém o valor antigo
+        matricula_final = int(nova_matricula) if nova_matricula else registro[1]
+        chassi_final    = novo_chassi if novo_chassi else registro[2]
+        cpf_final       = int(novo_cpf) if novo_cpf else registro[3]
+        data_final      = nova_data if nova_data else registro[4]
+        valor_final     = float(novo_valor.replace(",", ".")) if novo_valor else registro[5]
+
+        atualizar_negociacao(cursor, id_neg, matricula_final, chassi_final, cpf_final, data_final, valor_final)
+        conn.commit()
+        print("✅ Negociação atualizada.")
+
+
     else:
         print("❌ Opção inválida.")
-
 
 def deletar_registros(cursor, conn):
     print("\n🗑 Remover registros")
