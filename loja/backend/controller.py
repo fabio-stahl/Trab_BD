@@ -126,14 +126,16 @@ def handle_request(action, entity=None, data=None):
 
         # 5) DELETE
         elif action == "remove":
+            id_value = get_val("id")   # <-- pega o valor correto enviado pelo React
+
             if entity == "cliente":
-                service.deletar_cliente(cursor, get_val("cpf"))
+                service.deletar_cliente(cursor, id_value)
             elif entity == "funcionario":
-                service.deletar_funcionario(cursor, get_val("matricula"))
+                service.deletar_funcionario(cursor, id_value)
             elif entity == "carro":
-                service.deletar_carro(cursor, get_val("chassi"))
+                service.deletar_carro(cursor, id_value)
             elif entity == "negociacao":
-                service.deletar_negociacao(cursor, get_val("ID_Negociacao"))
+                service.deletar_negociacao(cursor, id_value)
             elif entity == "telefone":
                 service.deletar_telefone(cursor, get_val("cpf"), get_val("numero"))
 
