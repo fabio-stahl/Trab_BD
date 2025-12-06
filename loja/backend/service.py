@@ -153,16 +153,6 @@ def atualizar_gerente(cursor, matricula, vale_alimentacao):
 def atualizar_carro(cursor, chassi, modelo, cor):
     cursor.execute("UPDATE Carro SET Modelo = ?, Cor = ? WHERE Chassi = ?", (modelo, cor, chassi))
 
-# É um erro ter atualizar telefone
-def atualizar_telefone(cursor, cpf, numero_antigo, novo_numero):
-    cursor.execute("""
-        UPDATE Telefone
-        SET Numero = ?
-        WHERE CPF = ? AND Numero = ?
-    """, (novo_numero, cpf, numero_antigo))
-    print("DEBUG atualizar_telefone - linhas afetadas:", cursor.rowcount)
-
-
 def atualizar_negociacao(cursor, id_negociacao, matricula, chassi, cpf, data, valor):
     cursor.execute("""
         UPDATE Negociacao 
@@ -229,7 +219,7 @@ def buscar_carro_substring(cursor, termo):
     """
     Requisito: Busca com Substring case insensitive. [cite: 40, 41]
     """
-    termo_formatado = f"%{termo}%"
+    termo_formatado = f"%{termo.lower()}%"
     cursor.execute("SELECT * FROM Carro WHERE Modelo LIKE ?", (termo_formatado,))
     return cursor.fetchall()
 
@@ -237,7 +227,7 @@ def buscar_cliente_substring(cursor, termo):
     """
     Busca clientes cujo NOME contenha o termo pesquisado.
     """
-    termo_formatado = f"%{termo}%"
+    termo_formatado = f"%{termo.lower()}%"
     cursor.execute("SELECT * FROM Cliente WHERE Nome LIKE ?", (termo_formatado,))
     return cursor.fetchall()
 
@@ -245,7 +235,7 @@ def buscar_funcionario_substring(cursor, termo):
     """
     Busca funcionários cujo NOME contenha o termo pesquisado.
     """
-    termo_formatado = f"%{termo}%"
+    termo_formatado = f"%{termo.lower()}%"
     cursor.execute("SELECT * FROM Funcionario WHERE Nome LIKE ?", (termo_formatado,))
     return cursor.fetchall()
 
@@ -258,7 +248,7 @@ def relatorio_avancado(cursor):
     SELECT f.Nome as Vendedor, c.Modelo, n.Valor_Total
     FROM Negociacao n
     INNER JOIN Funcionario f ON n.Matricula = f.Matricula
-    INNER JOIN Carro c ON n.Chassi = c.Chassi
+    LEFT JOIN Carro c ON n.Chassi = c.Chassi
     ORDER BY n.Valor_Total DESC
     """
     cursor.execute(query)
@@ -266,15 +256,33 @@ def relatorio_avancado(cursor):
 
 def consulta_quantificador_any(cursor):
     """
-    Requisito: Consulta com quantificador ALL ou ANY (simulado com IN/Subquery). [cite: 46]
-    Retorna funcionarios que venderam carros com valor acima da média geral de vendas.
+    Requisito: Consulta com simulação de ANY/ALL em Subconsulta Correlacionada.
+    Lógica: Listar negociações cujo valor é maior que a média de vendas DO PRÓPRIO VENDEDOR.
+    A subquery (AVG) depende do 'n1.Matricula' da query externa -> Isso é correlação.
     """
     query = """
-    SELECT Nome FROM Funcionario 
-    WHERE Matricula IN (
-        SELECT Matricula FROM Negociacao 
-        WHERE Valor_Total > (SELECT AVG(Valor_Total) FROM Negociacao)
+    SELECT f.Nome, n1.Valor_Total
+    FROM Negociacao n1
+    JOIN Funcionario f ON n1.Matricula = f.Matricula
+    WHERE n1.Valor_Total > (
+        SELECT AVG(n2.Valor_Total)
+        FROM Negociacao n2
+        WHERE n2.Matricula = n1.Matricula
     )
+    """
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def relatorio_media_vendas_por_modelo(cursor):
+    """
+    Requisito: Segunda consulta utilizando cláusulas de agrupamento.
+    """
+    query = """
+    SELECT c.Modelo, COUNT(n.ID_Negociacao) as Qtd, AVG(n.Valor_Total) as Media_Valor
+    FROM Negociacao n
+    INNER JOIN Carro c ON n.Chassi = c.Chassi
+    GROUP BY c.Modelo
+    ORDER BY Qtd DESC
     """
     cursor.execute(query)
     return cursor.fetchall()

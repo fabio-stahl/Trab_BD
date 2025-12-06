@@ -122,12 +122,6 @@ def handle_request(action, entity=None, data=None):
             elif entity == "gerente":
                 pk = get_val("matricula")
                 service.atualizar_gerente(cursor, pk, get_val("vale_alimentacao"))
-            
-            # não deveria existir, pois se eu quero "atualizar" um numero, eu apago o que não é mais meu e crio um novo
-            elif entity == "telefone":
-                cpf = get_val("cpf")
-                pk = get_val("numero")
-                service.atualizar_telefone(cursor, cpf, pk, get_val("novo_numero"))
 
             response = {"message": f"{entity.upper()} atualizado!"}
 
@@ -193,15 +187,15 @@ def handle_request(action, entity=None, data=None):
 
             elif entity == "carro":
                 rows = service.buscar_carro_substring(cursor, termo)
-                response = [{"chassi": r[0], "modelo": r[1], "cor": r[2]} for r in rows]
+                response = [{"chassi": r[0], "modelo": r[1], "cor": r[2]} for r in rows] # Retorno é uma lista de dicionários
 
             elif entity == "cliente":
                 rows = service.buscar_cliente_substring(cursor, termo)
-                response = [{"cpf": r[0], "nome": r[1], "endereco": r[2]} for r in rows]
+                response = [{"cpf": r[0], "nome": r[1], "endereco": r[2]} for r in rows] # Retorno é uma lista de dicionários
 
             elif entity == "funcionario":
                 rows = service.buscar_funcionario_substring(cursor, termo)
-                response = [{"matricula": r[0], "nome": r[1], "salario": r[2]} for r in rows]
+                response = [{"matricula": r[0], "nome": r[1], "salario": r[2]} for r in rows] # Retorno é uma lista de dicionários
 
             else:
                 response = {"error": f"Substring não implementado para {entity}"}
@@ -227,11 +221,23 @@ def handle_request(action, entity=None, data=None):
         # 10) GROUP BY / HAVING
         # -----------------------------------------
         elif action == "grouping":
-            rows = service.relatorio_vendas_vendedor(cursor)
-            response = [
-                {"vendedor": r[0], "qtd_vendas": r[1], "total_faturado": r[2]}
-                for r in rows
-            ]
+            # Opção A: Vendas por Vendedor (Já existia)
+            tipo = get_val("tipo") # Sugestão: passar um tipo no data para escolher qual relatório
+
+            if tipo == "vendedor" or not tipo:
+                rows = service.relatorio_vendas_vendedor(cursor)
+                response = [
+                    {"vendedor": r[0], "qtd_vendas": r[1], "total_faturado": r[2]}
+                    for r in rows
+                ]
+            
+            # Opção B: Vendas por Modelo (NOVA - Para cumprir o requisito de "duas consultas")
+            elif tipo == "modelo":
+                rows = service.relatorio_media_vendas_por_modelo(cursor)
+                response = [
+                    {"modelo": r[0], "qtd_vendas": r[1], "media_valor": r[2]}
+                    for r in rows
+                ]
 
         else:
             response = {"error": f"Ação desconhecida: {action}"}
