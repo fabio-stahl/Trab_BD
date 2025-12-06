@@ -136,6 +136,26 @@ def buscar_negociacao(cursor, id_negociacao):
     cursor.execute("SELECT * FROM Negociacao WHERE ID_Negociacao = ?", (id_negociacao,))
     return cursor.fetchone()
 
+def listar_todos_clientes(cursor):
+    cursor.execute("SELECT * FROM Cliente")
+    return cursor.fetchall()
+
+def listar_todos_funcionarios(cursor):
+    cursor.execute("SELECT * FROM Funcionario")
+    return cursor.fetchall()
+
+def listar_todos_carros(cursor):
+    cursor.execute("SELECT * FROM Carro")
+    return cursor.fetchall()
+
+def listar_todas_negociacoes(cursor):
+    cursor.execute("SELECT * FROM Negociacao")
+    return cursor.fetchall()
+
+def listar_todos_telefones(cursor):
+    cursor.execute("SELECT * FROM Telefone")
+    return cursor.fetchall()
+
 # --- 4. OPERAÇÕES DE ATUALIZAÇÃO (UPDATE) --- [cite: 33]
 
 def atualizar_cliente(cursor, cpf, nome, endereco):
