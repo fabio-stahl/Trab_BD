@@ -204,9 +204,43 @@ def handle_request(action, entity=None, data=None):
 
         # 8, 9, 10) RELATÓRIOS (Advanced, Quantifiers, Grouping)
         elif action == "advanced":
-            rows = service.relatorio_avancado(cursor)
-            response = {"data": [{"vendedor": r[0], "modelo": r[1], "valor": r[2]} for r in rows]}
-              
+            report_type = get_val("report_type")
+            rows = []
+            response_data = []
+
+            if report_type == "inner":
+                rows = service.relatorio_inner_join(cursor)
+                response_data = [
+                    {"id_venda": r[0], "vendedor": r[1], "valor": r[2]} 
+                    for r in rows
+                ]
+            
+            elif report_type == "left":
+                rows = service.relatorio_left_join(cursor)
+                # Dica: r[1] e r[2] virão como None se o funcionário não vendeu nada
+                response_data = [
+                    {"funcionario": r[0], "id_venda": (r[1] or "-"), "valor": (r[2] or 0)} 
+                    for r in rows
+                ]
+
+            elif report_type == "right":
+                rows = service.relatorio_right_join_simulado(cursor)
+                response_data = [
+                    {"modelo": r[0], "cor": r[1], "data_venda": (r[2] or "-"), "status": r[3]} 
+                    for r in rows
+                ]
+            
+            else:
+                # Fallback padrão (Inner)
+                rows = service.relatorio_inner_join(cursor)
+                response_data = [{"id": r[0], "vendedor": r[1], "valor": r[2]} for r in rows]
+
+            response = {"data": response_data}
+
+        elif action == "quantifiers":
+            rows = service.consulta_quantificador_any(cursor)
+            response = {"data": [{"nome_funcionario": r[0], "venda_valor": r[1]} for r in rows]} # Ajustei campos
+
         elif action == "grouping":
             tipo = get_val("tipo")
             if tipo == "modelo":
