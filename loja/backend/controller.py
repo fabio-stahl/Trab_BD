@@ -4,6 +4,9 @@ import sqlite3
 from django.conf import settings
 # Certifique-se que o service é importado de forma relativa, se estiver na mesma pasta
 from . import service 
+import subprocess
+import sys
+from pathlib import Path
 
 DB_PATH = os.path.join(settings.BASE_DIR, "db.sqlite3")
 
@@ -48,6 +51,8 @@ def handle_request(action, entity=None, data=None):
     try:
         # 1) INICIALIZAÇÃO
         if action == "init_db":
+            reset_path = Path(__file__).resolve().parent.parent / "reset.py"
+            subprocess.run([sys.executable, str(reset_path)], check=True)
             service.criar_tabelas(cursor)
             response = {"message": "Tabelas e triggers criados!"}
 
