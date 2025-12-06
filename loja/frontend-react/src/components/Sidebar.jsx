@@ -1,4 +1,4 @@
-import React from "react"
+import React from "react";
 
 const menuItems = [
   { id: "add", label: "Adicionar dados" },
@@ -15,15 +15,12 @@ const menuItems = [
 
 export default function Sidebar({ onSelect }) {
   return (
-    <aside className="sidebar">
-      <div className="brand" >
-        <label className="text-3xl font-sans">Concessionária</label>
-      </div>
-      <nav className="menu">
+    <aside className="fixed top-2 left-0 w-full h-18 bg-transparent opacity-80 flex items-center px-6 shadow-md">
+      <nav className="flex-1 m-10">
         {menuItems.map((m) => (
           <button
             key={m.id}
-            className="menu-item"
+            className="px-3 py-2 text-white hover:text-white hover:bg-black rounded transition-all"
             onClick={() => onSelect(m.id)}
           >
             {m.label}
