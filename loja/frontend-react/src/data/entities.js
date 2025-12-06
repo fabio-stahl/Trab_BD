@@ -31,7 +31,7 @@ export const entities = {
         { id: 'matricula', label: 'Matrícula Vendedor', type: 'number' },
         { id: 'chassi', label: 'Chassi Carro', type: 'text' },
         { id: 'cpf', label: 'CPF Cliente', type: 'number' },
-        { id: 'valor', label: 'Valor Total', type: 'number' },
-        { id: 'data', label: 'Data (AAAA-MM-DD)', type: 'date' }
+        { id: 'data', label: 'Data (AAAA-MM-DD)', type: 'date' },
+        { id: 'valor', label: 'Valor Total', type: 'number' }        
     ]
 };

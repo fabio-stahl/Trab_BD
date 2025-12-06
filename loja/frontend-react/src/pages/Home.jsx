@@ -13,100 +13,115 @@ import { PageHome } from "../components/PageHome";
 const API_ENDPOINT = "http://localhost:8000/api/handler/";
 
 export default function Home() {
-    const [action, setAction] = useState("");
-    const [entity, setEntity] = useState("cliente");
-    const [result, setResult] = useState(null);
-    const [showInterface, setShowInterface] = useState(false);
+  const [action, setAction] = useState("");
+  const [entity, setEntity] = useState("cliente");
+  const [result, setResult] = useState(null);
+  const [showInterface, setShowInterface] = useState(false);
 
-    function handleMenuClick(selectedAction) {
-        setAction(selectedAction);
-        setShowInterface(true);
-        setResult(null);
-    }
+  function handleMenuClick(selectedAction) {
+    setAction(selectedAction);
+    setShowInterface(true);
+    setResult(null);
+    // Se a ação mudar, limpamos a interface anterior, mas mantemos o form visível
+  }
 
-    async function executeHandler({ action: act, entity: ent, data }) {
-        setResult({ message: "Processando..." });
-        
-        try {
-            const payload = {
+  async function executeHandler({ action: act, entity: ent, data }) {
+    setResult({ message: "Processando..." });
+
+    try {
+      const payload = {
         action: act || action,
         entity: ent || entity,
         data: data || {},
       };
-            
-            // --- ALTERAÇÃO AQUI: DE "/" PARA O ENDPOINT CORRETO ---
-            const res = await fetch(API_ENDPOINT, { 
-            // --------------------------------------------------------
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
 
-            // Adicionado tratamento de erro HTTP
-            if (!res.ok) {
-                // Tenta ler o JSON de erro do Django, se disponível
-                let errorDetails = await res.text();
-                try {
-                    errorDetails = JSON.parse(errorDetails);
-                    errorDetails = errorDetails.error || JSON.stringify(errorDetails);
-                } catch (e) {
-                    // Se não for JSON, usa o status
-                    errorDetails = `Erro HTTP: ${res.status} (${res.statusText})`;
-                }
-                throw new Error(errorDetails);
-            }
-            
-            const json = await res.json();
-            setResult(json);
+      const res = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-        } catch (err) {
-            setResult({ error: String(err) });
+      // Tratamento de erro HTTP
+      if (!res.ok) {
+        let errorDetails;
+        try {
+          // Tenta ler o JSON de erro do Django
+          const errText = await res.text();
+          const errJson = JSON.parse(errText);
+          errorDetails = errJson.error || JSON.stringify(errJson);
+        } catch (e) {
+          // Fallback se não for JSON
+          errorDetails = `Erro HTTP: ${res.status} (${res.statusText})`;
         }
+        throw new Error(errorDetails);
+      }
+
+      const json = await res.json();
+      setResult(json);
+    } catch (err) {
+      setResult({ error: String(err.message || err) });
     }
+  }
 
-    return (
-        <div className="app-container">
-            <Sidebar onSelect={handleMenuClick} />
+  // Função auxiliar para definir o título baseado na ação selecionada
+  const getTitle = () => {
+    switch (action) {
+      case "add": return "Adicionar Registro";
+      case "remove": return "Remover Dados";
+      case "update": return "Atualizar Registro";
+      case "search": return "Pesquisar por ID";
+      case "mass": return "Manipulação em Massa";
+      case "substring": return "Busca por Substring";
+      case "advanced": return "Relatório Avançado (JOINs)";
+      case "quantifiers": return "Quantificadores (ANY/ALL)";
+      case "grouping": return "Agrupamento e Ordenação";
+      case "init_db": return "Configuração do Banco";
+      default: return action; // Fallback
+    }
+  };
 
-            <main
+  return (
+    <div className="app-container">
+      <Sidebar onSelect={handleMenuClick} />
+
+      <main
         className="content-area"
         style={{
+          // CORREÇÃO: Adicionadas crases (backticks) para template string
           backgroundImage: `url(${BgImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-                <Header
-          title={
-            action
-              ? action === "add"
-                ? "Adicionar Registro"
-                : action === "update"
-                ? "Atualizar Registro"
-                : action == "remove"
-                ? "Remover Dados"
-                : action
-              : PageHome()
-                  }
-          subtitle={action ? "" : ""}
+        <Header
+          // Lógica simplificada usando a função getTitle
+          title={action ? getTitle() : <PageHome />}
+          subtitle={action ? `Operação: ${entity.toUpperCase()}` : ""}
         />
 
-                <section id="interface-container" className={`card ${!showInterface ? "hidden" : ""}`}>
-                
-                    <div id="dynamic-inputs" className="input-grid">
-                        <DynamicForm
-                            action={action}
-                            entity={entity}
-                            onEntityChange={(e) => setEntity(e)}
-                            onExecute={executeHandler}
-                        />
-                    </div>
-                </section>
+        <section
+          id="interface-container"
+          // CORREÇÃO: Adicionadas crases (backticks) para template string
+          className={`card ${!showInterface ? "hidden" : ""}`}
+        >
+          <div id="dynamic-inputs" className="input-grid">
+            <DynamicForm
+              action={action}
+              entity={entity}
+              onEntityChange={(e) => setEntity(e)}
+              onExecute={executeHandler}
+            />
+          </div>
+        </section>
 
-                <section id="results-area" className={`card ${!result ? "hidden" : ""}`}>
-                    <ResultsBox result={result} onClose={() => setResult(null)} />
-                </section>
-            </main>
-        </div>
-    );
+        <section
+          id="results-area"
+          // CORREÇÃO: Adicionadas crases (backticks) para template string
+          className={`card ${!result ? "hidden" : ""}`}
+        >
+          <ResultsBox result={result} onClose={() => setResult(null)} />
+        </section>
+      </main>
+    </div>
+  );
 }
