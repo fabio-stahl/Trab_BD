@@ -317,6 +317,51 @@ def relatorio_avancado(cursor):
     cursor.execute(query)
     return cursor.fetchall()
 
+def relatorio_inner_join(cursor):
+    """
+    INNER JOIN: Traz apenas os dados que têm correspondência nas duas tabelas.
+    Cenário: Listar apenas vendas concretizadas, ignorando funcionários sem vendas.
+    """
+    query = """
+    SELECT n.ID_Negociacao, f.Nome as Vendedor, n.Valor_Total
+    FROM Negociacao n
+    INNER JOIN Funcionario f ON n.Matricula = f.Matricula
+    ORDER BY n.ID_Negociacao
+    """
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def relatorio_left_join(cursor):
+    """
+    LEFT JOIN: Traz todos os registros da tabela da ESQUERDA (Funcionario),
+    mesmo que não tenha correspondência na direita (Negociacao).
+    Cenário: Listar TODOS os funcionários e suas vendas (se houver).
+    """
+    query = """
+    SELECT f.Nome as Funcionario, n.ID_Negociacao, n.Valor_Total
+    FROM Funcionario f
+    LEFT JOIN Negociacao n ON f.Matricula = n.Matricula
+    ORDER BY f.Nome
+    """
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def relatorio_right_join_simulado(cursor):
+    """
+    RIGHT JOIN (Simulado no SQLite): O SQLite não tem RIGHT JOIN.
+    Lógica: "Trazer todos os Carros (Direita), mesmo que não estejam em Negociação (Esquerda)".
+    Solução: Invertemos para 'FROM Carro LEFT JOIN Negociacao'.
+    """
+    query = """
+    SELECT c.Modelo, c.Cor, n.Data_Negociacao, 
+           CASE WHEN n.ID_Negociacao IS NULL THEN 'Disponível' ELSE 'Vendido' END as Status
+    FROM Carro c
+    LEFT JOIN Negociacao n ON c.Chassi = n.Chassi
+    ORDER BY c.Modelo
+    """
+    cursor.execute(query)
+    return cursor.fetchall()
+
 def consulta_quantificador_any(cursor):
     """
     Requisito: Consulta com simulação de ANY/ALL em Subconsulta Correlacionada.

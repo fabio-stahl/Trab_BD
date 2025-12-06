@@ -12,6 +12,7 @@ export default function DynamicForm({
   const [values, setValues] = useState({});
   const [massQueue, setMassQueue] = useState([]);
   const [error, setError] = useState("");
+  const [reportType, setReportType] = useState("inner");
 
   // Atualiza selectedEntity se a prop `entity` mudar externamente
   useEffect(() => {
@@ -306,6 +307,57 @@ export default function DynamicForm({
           <button className="btn-primary" type="submit">
             Pesquisar
           </button>
+        </div>
+      </form>
+    );
+  }
+
+  // 5) RELATÓRIOS DE JOIN
+  if (action === "advanced") {
+    const handleExecuteAdvanced = (e) => {
+      e.preventDefault();
+      if (onExecute) {
+        onExecute({
+          action,
+          entity: selectedEntity, 
+          data: { report_type: reportType },
+        });
+      }
+    };
+
+    return (
+      <form onSubmit={handleExecuteAdvanced}>
+        <div className="bg-blue-50 p-4 rounded border border-blue-200 mb-4">
+          <h4 className="font-bold text-blue-800 mb-2">Relatórios de Junção (JOINs)</h4>
+          <p className="text-sm text-blue-600 mb-4">
+            Visualize como os dados se relacionam entre tabelas diferentes.
+          </p>
+
+          <div className="form-group">
+            <label className="font-semibold text-gray-700">Selecione o Tipo de Join:</label>
+            <select
+              className="form-control"
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value)}
+            >
+              <option value="inner">1. INNER JOIN (Apenas Vendas Concretizadas)</option>
+              <option value="left">2. LEFT JOIN (Todos Funcionários, mesmo sem vendas)</option>
+              <option value="right">3. RIGHT JOIN (Todos Carros, mesmo não vendidos)</option>
+            </select>
+          </div>
+          
+          {/* Pequena legenda explicativa dinâmica */}
+          <div className="mt-2 text-xs text-gray-500 italic">
+            {reportType === "inner" && "Exibe a intersecção: Só aparece quem vendeu."}
+            {reportType === "left" && "Prioridade na esquerda: Lista equipe completa e preenche NULL onde não houve venda."}
+            {reportType === "right" && "Prioridade na direita: Lista estoque completo de carros e mostra vendas se existirem."}
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <button className="btn-primary w-full" type="submit">
+              Visualizar Dados
+            </button>
+          </div>
         </div>
       </form>
     );
