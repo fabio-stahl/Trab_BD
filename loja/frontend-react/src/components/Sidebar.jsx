@@ -13,15 +13,32 @@ const menuItems = [
   { id: "init_db", label: "Resetar/Criar Tabelas" },
 ];
 
-export default function Sidebar({ onSelect }) {
+export default function Sidebar({ onSelect, active }) {
   return (
-    <aside className="fixed top-2 left-0 w-full h-18 bg-transparent opacity-80 flex items-center px-6 shadow-md">
-      <nav className="flex-1 m-10">
+    <aside
+      className="
+        fixed top-4 left-1/2 -translate-x-1/2
+        w-[95%] max-w-6xl
+        backdrop-blur-xl
+        py-3 px-6 rounded-2xl
+        flex justify-center
+      "
+    >
+      <nav className="flex gap-4">
         {menuItems.map((m) => (
           <button
             key={m.id}
-            className="px-3 py-2 text-white hover:text-white hover:bg-black rounded transition-all"
             onClick={() => onSelect(m.id)}
+            className={`
+              text-white text-sm font-medium
+              px-4 py-2 rounded-4xl
+              w-full
+              transition-all duration-200 whitespace-nowrap
+              ${active === m.id 
+                ? " backdrop-blur-sm shadow-sm scale-105" 
+                : " hover:scale-110 hover:shadow-2xl"
+              }
+            `}
           >
             {m.label}
           </button>
