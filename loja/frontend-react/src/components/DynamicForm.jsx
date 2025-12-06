@@ -59,7 +59,7 @@ export default function DynamicForm({
       return v !== undefined && String(v).trim() !== "";
     });
 
-  // Adicionar à fila (massa) — torna seguro caso e seja undefined
+  // Adicionar à fila (massa)
   function addToQueue(e) {
     if (e && e.preventDefault) e.preventDefault();
     setError("");
@@ -74,8 +74,9 @@ export default function DynamicForm({
       return;
     }
 
-    // Formata linha na ordem correta (usar string vazia como fallback)
-    const rowAsArray = fields.map((field) => (values[field.id] !== undefined ? values[field.id] : ""));
+    const rowAsArray = fields.map((field) =>
+      values[field.id] !== undefined ? values[field.id] : ""
+    );
 
     setMassQueue((q) => [...q, rowAsArray]);
     setValues({});
@@ -106,6 +107,13 @@ export default function DynamicForm({
       payloadData.id = values.id || "";
     } else if (action === "substring") {
       payloadData.termo = values.termo || "";
+    } else if (action === "grouping_having") {
+      // Relatório com GROUP BY + HAVING
+      payloadData.minimo = values.minimo || 0;
+    } else if (action === "ordering") {
+      // Relatório com ordenação ASC/DESC
+      payloadData.tipo = values.tipo || "modelo";
+      payloadData.ordem = (values.ordem || "DESC").toUpperCase();
     } else if (action === "mass") {
       const pluralMap = {
         cliente: "clientes",
@@ -122,6 +130,7 @@ export default function DynamicForm({
       const key = pluralMap[selectedEntity] || selectedEntity + "s";
       payloadData[key] = massQueue;
     } else {
+      // grouping, advanced, quantifiers etc. usam direto o `values`
       Object.assign(payloadData, values);
     }
 
@@ -194,7 +203,9 @@ export default function DynamicForm({
         {renderEntitySelect()}
 
         <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-4">
-          <h4 className="mb-2 font-bold text-gray-700">1. Preencha uma amostra:</h4>
+          <h4 className="mb-2 font-bold text-gray-700">
+            1. Preencha uma amostra:
+          </h4>
           <div className="input-grid">
             {fields.map((f) => (
               <div className="form-group" key={f.id}>
@@ -311,7 +322,103 @@ export default function DynamicForm({
     );
   }
 
-  // 5) AÇÕES SIMPLES (INIT, REPORTS etc.)
+  // 5) GROUPING (AGRUPAMENTO DE VENDAS) – sem "Tabela Alvo"
+  if (action === "grouping") {
+    return (
+      <form onSubmit={submitForm}>
+        <div className="form-group">
+          <label>Tipo de Agrupamento</label>
+          <select
+            name="tipo"
+            className="form-control"
+            value={values.tipo || "modelo"}
+            onChange={handleInputChange}
+          >
+            <option value="modelo">Vendas por Modelo</option>
+            <option value="vendedor">Vendas por Vendedor (com HAVING fixo &gt; 0)</option>
+            <option value="cor">Vendas por Cor do Carro</option>
+            <option value="cliente">Vendas por Cliente</option>
+            <option value="funcionario">Vendas por Funcionário</option>
+            <option value="data">Vendas por Data</option>
+          </select>
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <button className="btn-primary" type="submit">
+            Gerar Relatório de Agrupamento
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  // 6) GROUPING + HAVING (mínimo de faturamento)
+  if (action === "grouping_having") {
+    return (
+      <form onSubmit={submitForm}>
+        {renderEntitySelect()}
+        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+          <label>Valor mínimo de faturamento (HAVING)</label>
+          <input
+            name="minimo"
+            type="number"
+            className="form-control"
+            placeholder="Ex: 10000"
+            value={values.minimo || ""}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <button className="btn-primary" type="submit">
+            Gerar Relatório (GROUP BY + HAVING)
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  // 7) ORDERING (ASC / DESC)
+  if (action === "ordering") {
+    return (
+      <form onSubmit={submitForm}>
+        {renderEntitySelect()}
+
+        <div className="form-group">
+          <label>Tipo de Relatório</label>
+          <select
+            name="tipo"
+            className="form-control"
+            value={values.tipo || "modelo"}
+            onChange={handleInputChange}
+          >
+            <option value="modelo">Vendas por Modelo (média de valor)</option>
+            <option value="vendedor">Vendas por Vendedor (total faturado)</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Ordenação</label>
+          <select
+            name="ordem"
+            className="form-control"
+            value={values.ordem || "DESC"}
+            onChange={handleInputChange}
+          >
+            <option value="ASC">Ascendente (menor → maior)</option>
+            <option value="DESC">Descendente (maior → menor)</option>
+          </select>
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <button className="btn-primary" type="submit">
+            Gerar Relatório Ordenado
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  // 8) AÇÕES SIMPLES (INIT, advanced, quantifiers etc.)
   return (
     <div>
       <p className="mb-4 text-gray-600">
