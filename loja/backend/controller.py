@@ -143,6 +143,29 @@ def handle_request(action, entity=None, data=None):
                 "message": f"{entity.upper()} removido!",
                 "data": obter_dados_atualizados(entity)
             }
+        elif action == "quantifiers":
+            qtype = get_val("type")  # vem do front: "ANY" ou "ALL"
+
+            if not qtype:
+                response = {"error": "Escolha o tipo: ANY ou ALL."}
+            else:
+                qtype = qtype.upper()
+
+                if qtype == "ANY":
+                    rows = service.consulta_quantificador_any(cursor)
+                elif qtype == "ALL":
+                    rows = service.consulta_quantificador_all(cursor)
+                else:
+                    response = {"error": f"Tipo inválido '{qtype}'. Use ANY ou ALL."}
+                    return response
+
+                # Monta o JSON de resposta
+                response = {
+                    "data": [
+                        {"nome_funcionario": r[0], "venda_valor": r[1]}
+                        for r in rows
+                    ]
+                }
 
         # 6) MASS LOAD
         elif action == "mass":
@@ -183,11 +206,7 @@ def handle_request(action, entity=None, data=None):
         elif action == "advanced":
             rows = service.relatorio_avancado(cursor)
             response = {"data": [{"vendedor": r[0], "modelo": r[1], "valor": r[2]} for r in rows]}
-
-        elif action == "quantifiers":
-            rows = service.consulta_quantificador_any(cursor)
-            response = {"data": [{"nome_funcionario": r[0], "venda_valor": r[1]} for r in rows]} # Ajustei campos
-
+              
         elif action == "grouping":
             tipo = get_val("tipo")
             if tipo == "modelo":

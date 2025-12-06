@@ -318,19 +318,29 @@ def relatorio_avancado(cursor):
     return cursor.fetchall()
 
 def consulta_quantificador_any(cursor):
-    """
-    Requisito: Consulta com simulação de ANY/ALL em Subconsulta Correlacionada.
-    Lógica: Listar negociações cujo valor é maior que a média de vendas DO PRÓPRIO VENDEDOR.
-    A subquery (AVG) depende do 'n1.Matricula' da query externa -> Isso é correlação.
-    """
     query = """
     SELECT f.Nome, n1.Valor_Total
     FROM Negociacao n1
-    JOIN Funcionario f ON n1.Matricula = f.Matricula
+    JOIN Funcionario f ON f.Matricula = n1.Matricula
     WHERE n1.Valor_Total > (
-        SELECT AVG(n2.Valor_Total)
+        SELECT MIN(n2.Valor_Total)
         FROM Negociacao n2
         WHERE n2.Matricula = n1.Matricula
+    )
+    """
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def consulta_quantificador_all(cursor):
+    query = """
+    SELECT f.Nome, n1.Valor_Total
+    FROM Negociacao n1
+    JOIN Funcionario f ON f.Matricula = n1.Matricula
+    WHERE n1.Valor_Total > (
+        SELECT MAX(n2.Valor_Total)
+        FROM Negociacao n2
+        WHERE n2.Matricula = n1.Matricula
+          AND n2.ID_Negociacao <> n1.ID_Negociacao
     )
     """
     cursor.execute(query)

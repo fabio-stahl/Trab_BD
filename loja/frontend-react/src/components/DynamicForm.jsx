@@ -10,6 +10,7 @@ export default function DynamicForm({
 }) {
   const [selectedEntity, setSelectedEntity] = useState(entity || "cliente");
   const [values, setValues] = useState({});
+  const [type, selectType] = useState("");
   const [massQueue, setMassQueue] = useState([]);
   const [error, setError] = useState("");
 
@@ -75,7 +76,9 @@ export default function DynamicForm({
     }
 
     // Formata linha na ordem correta (usar string vazia como fallback)
-    const rowAsArray = fields.map((field) => (values[field.id] !== undefined ? values[field.id] : ""));
+    const rowAsArray = fields.map((field) =>
+      values[field.id] !== undefined ? values[field.id] : ""
+    );
 
     setMassQueue((q) => [...q, rowAsArray]);
     setValues({});
@@ -194,7 +197,9 @@ export default function DynamicForm({
         {renderEntitySelect()}
 
         <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-4">
-          <h4 className="mb-2 font-bold text-gray-700">1. Preencha uma amostra:</h4>
+          <h4 className="mb-2 font-bold text-gray-700">
+            1. Preencha uma amostra:
+          </h4>
           <div className="input-grid">
             {fields.map((f) => (
               <div className="form-group" key={f.id}>
@@ -308,6 +313,40 @@ export default function DynamicForm({
           </button>
         </div>
       </form>
+    );
+  }
+
+  if (action === "quantifiers") {
+    return (
+      <div className="flex flex-col gap-4">
+        {/* Tipo de Quantificador */}
+        <div className="flex flex-col">
+          <label>Tipo de Quantificador</label>
+          <select
+            className="input"
+            onChange={(e) =>
+              setValues({ ...values, type: e.target.value.toLowerCase() })
+            }
+          >
+            <option value="ANY">ANY</option>
+            <option value="ALL">ALL</option>
+          </select>
+        </div>
+
+        {/* Botão */}
+        <button
+          className="btn-primary"
+          onClick={() =>
+           onExecute({
+              action:  "quantifier",
+              entity,
+              data: {}
+            })
+          }
+        >
+          Executar
+        </button>
+      </div>
     );
   }
 
