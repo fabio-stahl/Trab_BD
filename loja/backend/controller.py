@@ -2,7 +2,11 @@
 import os
 import sqlite3
 from django.conf import settings
-from . import service
+# Certifique-se que o service é importado de forma relativa, se estiver na mesma pasta
+from . import service 
+import subprocess
+import sys
+from pathlib import Path
 
 DB_PATH = os.path.join(settings.BASE_DIR, "db.sqlite3")
 
@@ -57,6 +61,8 @@ def handle_request(action, entity=None, data=None):
     try:
         # 1) INICIALIZAÇÃO
         if action == "init_db":
+            reset_path = Path(__file__).resolve().parent.parent / "reset.py"
+            subprocess.run([sys.executable, str(reset_path)], check=True)
             service.criar_tabelas(cursor)
             response = {"message": "Tabelas e triggers criados!"}
 
@@ -307,13 +313,8 @@ def handle_request(action, entity=None, data=None):
         # 8) RELATÓRIO AVANÇADO (JOINS)
         elif action == "advanced":
             rows = service.relatorio_avancado(cursor)
-            response = {
-                "data": [
-                    {"vendedor": r[0], "modelo": r[1], "valor": r[2]} for r in rows
-                ]
-            }
+            response = {"data": [{"vendedor": r[0], "modelo": r[1], "valor": r[2]} for r in rows]}
 
-        # 9) QUANTIFICADORES (ANY/ALL com subquery correlacionada)
         elif action == "quantifiers":
             rows = service.consulta_quantificador_any(cursor)
             response = {
