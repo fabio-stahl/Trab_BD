@@ -2,10 +2,10 @@ from django.shortcuts import render
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .controller import handle_request
+from backend.controller import handle_request
 
 @csrf_exempt  # depois podemos tratar CSRF de forma mais fina
-def api_execute(request):
+def api_handler(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Método não permitido. Use POST.'}, status=405)
 
