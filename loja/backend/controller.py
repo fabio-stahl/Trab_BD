@@ -102,16 +102,32 @@ def handle_request(action, entity=None, data=None):
         # 4) UPDATE
         # -----------------------------------------
         elif action == "update":
-            pk = get_val("id")
 
             if entity == "cliente":
+                pk = get_val("cpf")
                 service.atualizar_cliente(cursor, pk, get_val("nome"), get_val("endereco"))
 
             elif entity == "funcionario":
+                pk = get_val("matricula")
                 service.atualizar_funcionario(cursor, pk, get_val("nome"), get_val("salario"))
 
             elif entity == "carro":
+                pk = get_val("chassi")
                 service.atualizar_carro(cursor, pk, get_val("modelo"), get_val("cor"))
+
+            elif entity == "vendedor":
+                pk = get_val("matricula")
+                service.atualizar_vendedor(cursor, pk, get_val("vale_transporte"))
+
+            elif entity == "gerente":
+                pk = get_val("matricula")
+                service.atualizar_gerente(cursor, pk, get_val("vale_alimentacao"))
+            
+            # não deveria existir, pois se eu quero "atualizar" um numero, eu apago o que não é mais meu e crio um novo
+            elif entity == "telefone":
+                cpf = get_val("cpf")
+                pk = get_val("numero")
+                service.atualizar_telefone(cursor, cpf, pk, get_val("novo_numero"))
 
             response = {"message": f"{entity.upper()} atualizado!"}
 
@@ -119,19 +135,27 @@ def handle_request(action, entity=None, data=None):
         # 5) DELETE
         # -----------------------------------------
         elif action == "remove":
-            pk = get_val("id")
 
             if entity == "cliente":
+                pk = get_val("cpf")
                 service.deletar_cliente(cursor, pk)
 
             elif entity == "funcionario":
+                pk = get_val("matricula")
                 service.deletar_funcionario(cursor, pk)
 
             elif entity == "carro":
+                pk = get_val("chassi")
                 service.deletar_carro(cursor, pk)
 
             elif entity == "negociacao":
+                pk = get_val("ID_Negociacao")
                 service.deletar_negociacao(cursor, pk)
+            
+            elif entity == "telefone":
+                pk = get_val("numero")
+                cpf = get_val("cpf")
+                service.deletar_telefone(cursor, cpf, pk)
 
             response = {"message": f"{entity.upper()} removido!"}
 
@@ -139,25 +163,23 @@ def handle_request(action, entity=None, data=None):
         # 6) MASS LOAD
         # -----------------------------------------
         elif action == "mass":
-            # 🔥 ajustado para bater com SEU service.py
-            service.carga_clientes_em_massa(cursor, [
-                (111, "Carlos", "Rua A"),
-                (222, "Marcos", "Rua B"),
-                (333, "Júlia", "Rua C"),
-            ])
-
-            service.carga_carros_em_massa(cursor, [
-                ("X1", "Onix", "Branco"),
-                ("X2", "Civic", "Preto"),
-                ("X3", "Corolla", "Cinza"),
-            ])
-
-            service.carga_funcionarios_em_massa(cursor, [
-                (1, "Pedro", 3500),
-                (2, "Ana", 4200),
-                (3, "Fernando", 5000),
-            ])
-
+            if entity == "cliente":
+                lista_clientes = data.get('clientes', [])
+                if lista_clientes:
+                    service.carga_clientes_em_massa(cursor, lista_clientes)
+            elif entity == "carro":            
+                lista_carros = data.get('carros', [])
+                if lista_carros:
+                    service.carga_carros_em_massa(cursor, lista_carros)
+            elif entity == "funcionario":
+                lista_funcionarios = data.get('funcionarios', [])
+                if lista_funcionarios:
+                    service.carga_funcionarios_em_massa(cursor, lista_funcionarios)
+            elif entity == "negociacao":
+                lista_negociacoes = data.get('negociacoes', [])
+                if lista_negociacoes:
+                    service.carga_negociacoes_em_massa(cursor, lista_negociacoes)
+            
             response = {"message": "Carga em massa executada com sucesso!"}
 
         # -----------------------------------------

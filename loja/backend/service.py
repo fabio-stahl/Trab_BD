@@ -144,9 +144,16 @@ def atualizar_cliente(cursor, cpf, nome, endereco):
 def atualizar_funcionario(cursor, matricula, nome, salario):
     cursor.execute("UPDATE Funcionario SET Nome = ?, Salario = ? WHERE Matricula = ?", (nome, salario, matricula))
 
+def atualizar_vendedor(cursor, matricula, vale_transporte):
+    cursor.execute("UPDATE Vendedor SET Vale_transporte = ? WHERE Matricula = ?", (vale_transporte, matricula))
+
+def atualizar_gerente(cursor, matricula, vale_alimentacao):
+    cursor.execute("UPDATE Gerente SET Vale_alimentacao = ? WHERE Matricula = ?", (vale_alimentacao, matricula))
+
 def atualizar_carro(cursor, chassi, modelo, cor):
     cursor.execute("UPDATE Carro SET Modelo = ?, Cor = ? WHERE Chassi = ?", (modelo, cor, chassi))
 
+# É um erro ter atualizar telefone
 def atualizar_telefone(cursor, cpf, numero_antigo, novo_numero):
     cursor.execute("""
         UPDATE Telefone
@@ -182,6 +189,9 @@ def deletar_carro(cursor, chassi):
 
 def deletar_negociacao(cursor, id_negociacao):
     cursor.execute("DELETE FROM Negociacao WHERE ID_Negociacao = ?", (id_negociacao,))
+
+def deletar_telefone(cursor, cpf, numero):
+    cursor.execute("DELETE FROM Telefone WHERE CPF = ? AND Numero = ?", (cpf, numero))
 
 # --- 6. OPERAÇÕES ESPECIAIS (REQUISITOS AVANÇADOS) ---
 def carga_clientes_em_massa(cursor, lista_dados):
