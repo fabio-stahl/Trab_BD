@@ -1,10 +1,14 @@
+# backend/controller.py
 import os
 import sqlite3
 from django.conf import settings
-from . import service
+# Certifique-se que o service é importado de forma relativa, se estiver na mesma pasta
+from . import service 
 
 DB_PATH = os.path.join(settings.BASE_DIR, "db.sqlite3")
 
+# ... (Todo o restante do seu código handle_request)
+# ... Seu código completo é mantido abaixo
 
 def handle_request(action, entity=None, data=None):
     """
