@@ -9,6 +9,7 @@ DB_PATH = os.path.join(settings.BASE_DIR, "db.sqlite3")
 
 def handle_request(action, entity=None, data=None):
     conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON;")
     cursor = conn.cursor()
     response = {}
 
