@@ -4,6 +4,9 @@ import sqlite3
 from django.conf import settings
 # Certifique-se que o service é importado de forma relativa, se estiver na mesma pasta
 from . import service 
+import subprocess
+import sys
+from pathlib import Path
 
 DB_PATH = os.path.join(settings.BASE_DIR, "db.sqlite3")
 
@@ -48,6 +51,8 @@ def handle_request(action, entity=None, data=None):
     try:
         # 1) INICIALIZAÇÃO
         if action == "init_db":
+            reset_path = Path(__file__).resolve().parent.parent / "reset.py"
+            subprocess.run([sys.executable, str(reset_path)], check=True)
             service.criar_tabelas(cursor)
             response = {"message": "Tabelas e triggers criados!"}
 
@@ -143,29 +148,6 @@ def handle_request(action, entity=None, data=None):
                 "message": f"{entity.upper()} removido!",
                 "data": obter_dados_atualizados(entity)
             }
-        elif action == "quantifiers":
-            qtype = get_val("type")  # vem do front: "ANY" ou "ALL"
-
-            if not qtype:
-                response = {"error": "Escolha o tipo: ANY ou ALL."}
-            else:
-                qtype = qtype.upper()
-
-                if qtype == "ANY":
-                    rows = service.consulta_quantificador_any(cursor)
-                elif qtype == "ALL":
-                    rows = service.consulta_quantificador_all(cursor)
-                else:
-                    response = {"error": f"Tipo inválido '{qtype}'. Use ANY ou ALL."}
-                    return response
-
-                # Monta o JSON de resposta
-                response = {
-                    "data": [
-                        {"nome_funcionario": r[0], "venda_valor": r[1]}
-                        for r in rows
-                    ]
-                }
 
         # 6) MASS LOAD
         elif action == "mass":
@@ -201,6 +183,15 @@ def handle_request(action, entity=None, data=None):
                     response = {"data": [{"matricula": r[0], "nome": r[1], "salario": r[2]} for r in rows]}
                 else:
                     response = {"error": "Entidade inválida para substring"}
+        
+        elif action == "quantifiers":
+            type_quantifier = get_val("quantifier_type")
+            if type_quantifier == "any" : 
+                rows = service.consulta_quantificador_any(cursor)
+                response = {"data": [{"nome_funcionario": r[0], "venda_valor": r[1]} for r in rows]} 
+            elif type_quantifier == "all" :
+                rows = service.consulta_quantificador_all(cursor)        
+                response = {"data": [{"nome_funcionario": r[0], "venda_valor": r[1]} for r in rows]}
 
         # 8, 9, 10) RELATÓRIOS (Advanced, Quantifiers, Grouping)
         elif action == "advanced":
@@ -236,10 +227,6 @@ def handle_request(action, entity=None, data=None):
                 response_data = [{"id": r[0], "vendedor": r[1], "valor": r[2]} for r in rows]
 
             response = {"data": response_data}
-
-        elif action == "quantifiers":
-            rows = service.consulta_quantificador_any(cursor)
-            response = {"data": [{"nome_funcionario": r[0], "venda_valor": r[1]} for r in rows]} # Ajustei campos
 
         elif action == "grouping":
             tipo = get_val("tipo")

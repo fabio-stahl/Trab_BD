@@ -363,6 +363,39 @@ def relatorio_right_join_simulado(cursor):
     return cursor.fetchall()
 
 def consulta_quantificador_any(cursor):
+    """
+    Requisito: Consulta com simulação de ANY/ALL em Subconsulta Correlacionada.
+    Lógica: Listar negociações cujo valor é maior que a média de vendas DO PRÓPRIO VENDEDOR.
+    A subquery (AVG) depende do 'n1.Matricula' da query externa -> Isso é correlação.
+    """
+    query = """
+    SELECT f.Nome, n1.Valor_Total
+    FROM Negociacao n1
+    JOIN Funcionario f ON n1.Matricula = f.Matricula
+    WHERE n1.Valor_Total > (
+        SELECT AVG(n2.Valor_Total)
+        FROM Negociacao n2
+        WHERE n2.Matricula = n1.Matricula
+    )
+    """
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def relatorio_media_vendas_por_modelo(cursor):
+    """
+    Requisito: Segunda consulta utilizando cláusulas de agrupamento.
+    """
+    query = """
+    SELECT c.Modelo, COUNT(n.ID_Negociacao) as Qtd, AVG(n.Valor_Total) as Media_Valor
+    FROM Negociacao n
+    INNER JOIN Carro c ON n.Chassi = c.Chassi
+    GROUP BY c.Modelo
+    ORDER BY Qtd DESC
+    """
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def consulta_quantificador_any(cursor):
     query = """
     SELECT f.Nome, n1.Valor_Total
     FROM Negociacao n1
@@ -390,21 +423,6 @@ def consulta_quantificador_all(cursor):
     """
     cursor.execute(query)
     return cursor.fetchall()
-
-def relatorio_media_vendas_por_modelo(cursor):
-    """
-    Requisito: Segunda consulta utilizando cláusulas de agrupamento.
-    """
-    query = """
-    SELECT c.Modelo, COUNT(n.ID_Negociacao) as Qtd, AVG(n.Valor_Total) as Media_Valor
-    FROM Negociacao n
-    INNER JOIN Carro c ON n.Chassi = c.Chassi
-    GROUP BY c.Modelo
-    ORDER BY Qtd DESC
-    """
-    cursor.execute(query)
-    return cursor.fetchall()
-
 def relatorio_vendas_vendedor(cursor):
     """
     Requisito: Consulta com Group By, Having e Ordenação. [cite: 48, 49]
