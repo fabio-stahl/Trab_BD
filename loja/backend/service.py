@@ -5,9 +5,9 @@ import sqlite3
 def criar_tabelas(cursor):
     """
     Cria a estrutura do banco de dados atendendo aos requisitos:
-    - 6 tabelas no mínimo [cite: 13]
-    - Relacionamentos 1:1, 1:N, N:N, Ternário [cite: 22, 23, 24, 25]
-    - Valor padrão e Gatilhos [cite: 16, 50]
+    - 6 tabelas no mínimo
+    - Relacionamentos 1:1, 1:N, N:N, Ternário
+    - Valor padrão e Gatilhos
     """
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Cliente (
@@ -30,8 +30,9 @@ def criar_tabelas(cursor):
         Numero INTEGER PRIMARY KEY,
         CPF INTEGER,
         FOREIGN KEY (CPF) REFERENCES Cliente(CPF) ON DELETE CASCADE
-);
+    );
     """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Gerente (
         Matricula INTEGER PRIMARY KEY,
@@ -39,6 +40,7 @@ def criar_tabelas(cursor):
         FOREIGN KEY (Matricula) REFERENCES Funcionario(Matricula) ON DELETE CASCADE
     );
     """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Vendedor (
         Matricula INTEGER PRIMARY KEY,
@@ -46,13 +48,15 @@ def criar_tabelas(cursor):
         FOREIGN KEY (Matricula) REFERENCES Funcionario(Matricula) ON DELETE CASCADE
     );
     """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Carro (
         Chassi TEXT PRIMARY KEY,
         Modelo TEXT NOT NULL,
-        Cor TEXT DEFAULT 'Preto' 
+        Cor TEXT DEFAULT 'Preto'
     );
     """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Negociacao (
         ID_Negociacao INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,7 +73,13 @@ def criar_tabelas(cursor):
             ON UPDATE CASCADE ON DELETE RESTRICT
     );
     """)
-    
+
+    # 🔒 Cada chassi só pode aparecer UMA vez em Negociacao
+    cursor.execute("""
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_negociacao_chassi_unico
+    ON Negociacao(Chassi);
+    """)
+
     # --- GATILHO (TRIGGER) --- [cite: 50]
     # Requisito: Gatilho em inserção para validar dados
     cursor.execute("""
@@ -107,8 +117,40 @@ def inserir_carro(cursor, chassi, modelo, cor):
         cor = None
     cursor.execute("INSERT INTO Carro (Chassi, Modelo, Cor) VALUES (?, ?, ?)", (chassi, modelo, cor))
 
+
 def realizar_negociacao(cursor, matricula, chassi, cpf, data, valor):
-    # Relacionamento Ternário
+    """
+    Realiza uma negociação garantindo as seguintes regras de negócio:
+    - Funcionário (Matricula) deve existir
+    - Carro (Chassi) deve existir
+    - Cliente (CPF) deve existir
+    - Um mesmo chassi só pode aparecer em UMA negociação.
+    """
+    # 1) Funcionário deve existir
+    cursor.execute("SELECT 1 FROM Funcionario WHERE Matricula = ?", (matricula,))
+    if cursor.fetchone() is None:
+        raise Exception("Funcionário (Matrícula) inexistente para esta negociação.")
+
+    # 2) Carro deve existir
+    cursor.execute("SELECT 1 FROM Carro WHERE Chassi = ?", (chassi,))
+    if cursor.fetchone() is None:
+        raise Exception("Carro (Chassi) inexistente para esta negociação.")
+
+    # 3) Cliente deve existir
+    cursor.execute("SELECT 1 FROM Cliente WHERE CPF = ?", (cpf,))
+    if cursor.fetchone() is None:
+        raise Exception("Cliente (CPF) inexistente para esta negociação.")
+
+    # 4) Regra de negócio: um chassi só pode ser negociado UMA vez
+    cursor.execute("SELECT CPF FROM Negociacao WHERE Chassi = ?", (chassi,))
+    row = cursor.fetchone()
+    if row is not None:
+        # Já existe negociação para esse chassi (com qualquer CPF)
+        raise Exception(
+            f"Este carro (Chassi {chassi}) já foi negociado com o CPF {row[0]}."
+        )
+
+    # 5) Se passou por tudo, insere
     cursor.execute("""
         INSERT INTO Negociacao (Matricula, Chassi, CPF, Data_Negociacao, Valor_Total)
         VALUES (?, ?, ?, ?, ?)
@@ -204,6 +246,7 @@ def deletar_telefone(cursor, cpf, numero):
     cursor.execute("DELETE FROM Telefone WHERE CPF = ? AND Numero = ?", (cpf, numero))
 
 # --- 6. OPERAÇÕES ESPECIAIS (REQUISITOS AVANÇADOS) ---
+
 def carga_clientes_em_massa(cursor, lista_dados):
     """
     Recebe uma lista de tuplas: [(CPF, Nome, Endereco), ...]
