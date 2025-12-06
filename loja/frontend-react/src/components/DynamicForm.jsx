@@ -53,7 +53,45 @@ export default function DynamicForm({
   }
 
   // Render helpers
-  if (["add", "update"].includes(action)) {
+  if (["add"].includes(action)) {
+    return (
+      <form onSubmit={submitForm}>
+        <div className="form-group" style={{ marginBottom: 16 }}>
+          <label>Tabela Alvo:</label>
+          <select value={selectedEntity} onChange={handleEntitySelect}>
+            <option value="cliente">Cliente</option>
+            <option value="carro">Carro</option>
+            <option value="vendedor">Vendedor</option>
+            <option value="gerente">Gerente</option>
+            <option value="negociacao">Negociação</option>
+          </select>
+        </div>
+
+        <div className="input-grid">
+          {fields.map((f) => (
+            <div className="form-group" key={f.id}>
+              <label>{f.label}</label>
+              <input
+                name={f.id}
+                type={f.type}
+                className="form-control"
+                placeholder={f.label}
+                value={values[f.id] || ""}
+                onChange={handleInputChange}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <button className="btn-primary" type="submit">
+            Executar
+          </button>
+        </div>
+      </form>
+    );
+  }
+  if (["update"].includes(action)) {
     return (
       <form onSubmit={submitForm}>
         <div className="form-group" style={{ marginBottom: 16 }}>

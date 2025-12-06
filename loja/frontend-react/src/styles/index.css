@@ -60,8 +60,10 @@ html, body {
 .content-area {
     flex-grow: 1;
     padding: 40px;
+    padding-top: 80px; 
     overflow-y: auto;
-    background-color: #ecf0f1;
+ 
+    background-image: image("src/assets/image_car.jpeg");
 }
 
 header { margin-bottom: 30px; }
