@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { entities } from "../data/entities";
 
-
 export default function DynamicForm({
   action,
   entity,
@@ -11,27 +10,33 @@ export default function DynamicForm({
 }) {
   const [selectedEntity, setSelectedEntity] = useState(entity || "cliente");
   const [values, setValues] = useState({});
-
-  // Estado para Manipulação em Massa (Lista de itens a inserir)
   const [massQueue, setMassQueue] = useState([]);
-
-  // Estado para mensagens de erro de validação
   const [error, setError] = useState("");
 
-  // Atualiza campos quando a entidade muda
-  const fields = entities[selectedEntity] || [];
+  // Atualiza selectedEntity se a prop `entity` mudar externamente
+  useEffect(() => {
+    if (entity && entity !== selectedEntity) {
+      setSelectedEntity(entity);
+      setValues({});
+      setMassQueue([]);
+      setError("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entity]);
 
-  // Resetar estados ao mudar de ação ou entidade
+  // Resetar estados ao mudar de ação ou entidade selecionada
   useEffect(() => {
     setValues({});
     setMassQueue([]);
     setError("");
   }, [action, selectedEntity]);
 
+  // Campos da entidade selecionada (fallback para array vazio)
+  const fields = entities[selectedEntity] || [];
+
   function handleInputChange(e) {
     const { name, value } = e.target;
     setValues((s) => ({ ...s, [name]: value }));
-    // limpamos o erro assim que o usuário começar a digitar
     setError("");
   }
 
@@ -39,12 +44,12 @@ export default function DynamicForm({
     const newEntity = e.target.value;
     setSelectedEntity(newEntity);
     setValues({});
-    setMassQueue([]); // Limpa a fila se trocar a tabela
+    setMassQueue([]);
     setError("");
     if (onEntityChange) onEntityChange(newEntity);
   }
 
-  // --- helper para validar se todos os campos estão preenchidos ---
+  // Validação geral do formulário para add/update
   const isAddOrUpdate = ["add", "update"].includes(action);
   const isFormValid =
     !isAddOrUpdate ||
@@ -54,12 +59,11 @@ export default function DynamicForm({
       return v !== undefined && String(v).trim() !== "";
     });
 
-  // --- Lógica para Adicionar à Fila (Massa) ---
+  // Adicionar à fila (massa) — torna seguro caso e seja undefined
   function addToQueue(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError("");
 
-    // Para carga em massa: também podemos exigir todos os campos preenchidos
     const hasEmpty = fields.some((f) => {
       const v = values[f.id];
       return v === undefined || String(v).trim() === "";
@@ -70,21 +74,20 @@ export default function DynamicForm({
       return;
     }
 
-    // Transforma o objeto {cpf: 1, nome: "A"} em array [1, "A"] na ordem correta
-    const rowAsArray = fields.map((field) => values[field.id] || "");
+    // Formata linha na ordem correta (usar string vazia como fallback)
+    const rowAsArray = fields.map((field) => (values[field.id] !== undefined ? values[field.id] : ""));
 
-    setMassQueue([...massQueue, rowAsArray]);
-    setValues({}); // Limpa o formulário para o próximo
+    setMassQueue((q) => [...q, rowAsArray]);
+    setValues({});
   }
 
-  // --- Lógica de Envio (Submit) ---
+  // Envio do formulário (submit)
   function submitForm(e) {
-    e && e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError("");
 
     const payloadData = {};
 
-    // ✅ Validação para ADD / UPDATE: não deixa enviar se tiver campo vazio
     if (["add", "update"].includes(action)) {
       const missingFields = fields.filter((f) => {
         const v = values[f.id];
@@ -93,7 +96,7 @@ export default function DynamicForm({
 
       if (missingFields.length > 0) {
         setError("Preencha todos os campos antes de executar a operação.");
-        return; // trava o envio
+        return;
       }
 
       fields.forEach((f) => {
@@ -104,7 +107,6 @@ export default function DynamicForm({
     } else if (action === "substring") {
       payloadData.termo = values.termo || "";
     } else if (action === "mass") {
-      // O Controller espera chaves no plural (clientes, carros...)
       const pluralMap = {
         cliente: "clientes",
         carro: "carros",
@@ -132,7 +134,7 @@ export default function DynamicForm({
     }
   }
 
-  // --- RENDERIZAÇÃO: Select de Tabela (Comum a Add, Update, Mass) ---
+  // Render do select de entidade (reaproveitável)
   const renderEntitySelect = () => (
     <div className="form-group" style={{ marginBottom: 16 }}>
       <label className="text-gray-700 font-bold mb-2">Tabela Alvo:</label>
@@ -145,7 +147,6 @@ export default function DynamicForm({
         <option value="carro">Carro</option>
         <option value="funcionario">Funcionário</option>
         <option value="negociacao">Negociação</option>
-        {/* Vendedor/Gerente/Telefone geralmente não tem mass load no seu controller, mas mantivemos aqui */}
         {action !== "mass" && <option value="vendedor">Vendedor</option>}
         {action !== "mass" && <option value="gerente">Gerente</option>}
         {action !== "mass" && <option value="telefone">Telefone</option>}
@@ -153,7 +154,7 @@ export default function DynamicForm({
     </div>
   );
 
-  // --- 1. VIEW: ADD / UPDATE ---
+  // 1) ADD / UPDATE
   if (["add", "update"].includes(action)) {
     return (
       <form onSubmit={submitForm}>
@@ -175,18 +176,10 @@ export default function DynamicForm({
           ))}
         </div>
 
-        {error && (
-          <p className="text-red-600 mt-2">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-red-600 mt-2">{error}</p>}
 
         <div style={{ marginTop: 20 }}>
-          <button
-            className="btn-primary"
-            type="submit"
-            disabled={!isFormValid}
-          >
+          <button className="btn-primary" type="submit" disabled={!isFormValid}>
             {action === "add" ? "Adicionar" : "Atualizar"}
           </button>
         </div>
@@ -194,7 +187,7 @@ export default function DynamicForm({
     );
   }
 
-  // --- 2. VIEW: MASS LOAD ---
+  // 2) MASS LOAD
   if (action === "mass") {
     return (
       <div>
@@ -227,13 +220,8 @@ export default function DynamicForm({
           </button>
         </div>
 
-        {error && (
-          <p className="text-red-600 mb-3">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-red-600 mb-3">{error}</p>}
 
-        {/* Preview da Fila */}
         {massQueue.length > 0 && (
           <div className="mb-6">
             <h4 className="mb-2 font-bold text-gray-700">
@@ -275,7 +263,7 @@ export default function DynamicForm({
     );
   }
 
-  // --- 3. VIEW: REMOVE / SEARCH ---
+  // 3) REMOVE / SEARCH
   if (["remove", "search"].includes(action)) {
     return (
       <form onSubmit={submitForm}>
@@ -299,7 +287,7 @@ export default function DynamicForm({
     );
   }
 
-  // --- 4. VIEW: SUBSTRING ---
+  // 4) SUBSTRING
   if (action === "substring") {
     return (
       <form onSubmit={submitForm}>
@@ -323,7 +311,7 @@ export default function DynamicForm({
     );
   }
 
-  // --- 5. VIEW: AÇÕES SIMPLES (INIT, REPORTS) ---
+  // 5) AÇÕES SIMPLES (INIT, REPORTS etc.)
   return (
     <div>
       <p className="mb-4 text-gray-600">
@@ -331,7 +319,9 @@ export default function DynamicForm({
       </p>
       <button
         className="btn-primary"
-        onClick={() => onExecute({ action, entity: selectedEntity, data: {} })}
+        onClick={() =>
+          onExecute && onExecute({ action, entity: selectedEntity, data: {} })
+        }
       >
         Executar {action}
       </button>
