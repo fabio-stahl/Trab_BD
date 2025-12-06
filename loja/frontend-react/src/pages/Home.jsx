@@ -8,7 +8,7 @@ import ResultsBox from "../components/ResultsBox";
 import "../styles/index.css"; 
 
 // O ENDPOINT CORRETO CONFIGURADO NO DJANGO É /handler/
-const API_ENDPOINT = "/handler/";
+const API_ENDPOINT = "/api/handler/";
 
 export default function Home() {
     const [action, setAction] = useState("");
