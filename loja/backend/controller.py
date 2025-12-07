@@ -2,11 +2,7 @@
 import os
 import sqlite3
 from django.conf import settings
-# Certifique-se que o service é importado de forma relativa, se estiver na mesma pasta
 from . import service 
-import subprocess
-import sys
-from pathlib import Path
 import subprocess
 import sys
 from pathlib import Path
@@ -185,6 +181,8 @@ def handle_request(action, entity=None, data=None):
 
         # 4) UPDATE
         elif action == "update":
+            linhas_afetadas = 0  # <<< chave do controle
+
             if entity == "cliente":
                 service.atualizar_cliente(
                     cursor,
@@ -192,6 +190,7 @@ def handle_request(action, entity=None, data=None):
                     get_val("nome"),
                     get_val("endereco"),
                 )
+                linhas_afetadas = cursor.rowcount
 
             elif entity == "funcionario":
                 service.atualizar_funcionario(
@@ -200,6 +199,7 @@ def handle_request(action, entity=None, data=None):
                     get_val("nome"),
                     get_val("salario"),
                 )
+                linhas_afetadas = cursor.rowcount
 
             elif entity == "carro":
                 service.atualizar_carro(
@@ -208,6 +208,7 @@ def handle_request(action, entity=None, data=None):
                     get_val("modelo"),
                     get_val("cor"),
                 )
+                linhas_afetadas = cursor.rowcount
 
             elif entity == "vendedor":
                 service.atualizar_vendedor(
@@ -215,6 +216,7 @@ def handle_request(action, entity=None, data=None):
                     get_val("matricula"),
                     get_val("vale_transporte"),
                 )
+                linhas_afetadas = cursor.rowcount
                 entity = "funcionario"
 
             elif entity == "gerente":
@@ -223,38 +225,72 @@ def handle_request(action, entity=None, data=None):
                     get_val("matricula"),
                     get_val("vale_alimentacao"),
                 )
+                linhas_afetadas = cursor.rowcount
                 entity = "funcionario"
 
-            response = {
-                "message": f"{entity.upper()} atualizado!",
-                "data": obter_dados_atualizados(entity),
-            }
+            elif entity == "negociacao":
+                # Se você tiver tela de update de negociação,
+                # aqui você chamaria service.atualizar_negociacao(...)
+                service.atualizar_negociacao(
+                    cursor,
+                    get_val("id"),
+                    get_val("matricula"),
+                    get_val("chassi"),
+                    get_val("cpf"),
+                    get_val("data"),
+                    get_val("valor"),
+                )
+                linhas_afetadas = cursor.rowcount
+
+            # Decisão da mensagem com base em linhas_afetadas
+            if linhas_afetadas == 0:
+                response = {
+                    "message": f"Nenhum registro de {entity} encontrado para atualizar.",
+                    "data": [],
+                }
+            else:
+                response = {
+                    "message": f"{entity.upper()} atualizado!",
+                    "data": obter_dados_atualizados(entity),
+                }
 
         # 5) DELETE
         elif action == "remove":
             id_value = get_val("id")
+            linhas_afetadas = 0  # <<< chave do controle
 
             if entity == "cliente":
                 service.deletar_cliente(cursor, id_value)
+                linhas_afetadas = cursor.rowcount
 
             elif entity == "funcionario":
                 service.deletar_funcionario(cursor, id_value)
+                linhas_afetadas = cursor.rowcount
 
             elif entity == "carro":
                 service.deletar_carro(cursor, id_value)
+                linhas_afetadas = cursor.rowcount
 
             elif entity == "negociacao":
                 service.deletar_negociacao(cursor, id_value)
+                linhas_afetadas = cursor.rowcount
 
             elif entity == "telefone":
-                # OBS: aqui originalmente esperava cpf/numero, mas o front manda só id.
-                # Mantido como estava para não divergir do seu fluxo atual.
+                # Aqui depende de como você quer identificar telefone.
+                # Mantive a lógica antiga, mas agora respeitando rowcount.
                 service.deletar_telefone(cursor, get_val("cpf"), get_val("numero"))
+                linhas_afetadas = cursor.rowcount
 
-            response = {
-                "message": f"{entity.upper()} removido!",
-                "data": obter_dados_atualizados(entity),
-            }
+            if linhas_afetadas == 0:
+                response = {
+                    "message": f"Nenhum registro de {entity} encontrado para remover.",
+                    "data": obter_dados_atualizados(entity),
+                }
+            else:
+                response = {
+                    "message": f"{entity.upper()} removido!",
+                    "data": obter_dados_atualizados(entity),
+                }
 
         # 6) MASS LOAD
         elif action == "mass":
@@ -329,7 +365,6 @@ def handle_request(action, entity=None, data=None):
                 ]
             elif report_type == "left":
                 rows = service.relatorio_left_join(cursor)
-                # Dica: r[1] e r[2] virão como None se o funcionário não vendeu nada
                 response_data = [
                     {"funcionario": r[0], "id_venda": (r[1] or "-"), "valor": (r[2] or 0)} 
                     for r in rows
@@ -341,7 +376,6 @@ def handle_request(action, entity=None, data=None):
                     for r in rows
                 ]
             else:
-                # Fallback padrão (Inner)
                 rows = service.relatorio_inner_join(cursor)
                 response_data = [{"id": r[0], "vendedor": r[1], "valor": r[2]} for r in rows]
             response = {"data": response_data}
@@ -356,15 +390,6 @@ def handle_request(action, entity=None, data=None):
                 response = {"data": [{"nome_funcionario": r[0], "venda_valor": r[1]} for r in rows]}
 
         elif action == "grouping":
-            """
-            Usa o campo 'tipo' enviado pelo front:
-            - modelo
-            - vendedor
-            - cor
-            - cliente
-            - funcionario
-            - data
-            """
             tipo = get_val("tipo")
 
             if tipo == "modelo":
@@ -448,7 +473,6 @@ def handle_request(action, entity=None, data=None):
             else:
                 response = {"error": "Tipo de agrupamento inválido."}
 
-        # 11) GROUPING + HAVING (mínimo de faturamento)
         elif action == "grouping_having":
             minimo_raw = get_val("minimo")
             try:
@@ -468,7 +492,6 @@ def handle_request(action, entity=None, data=None):
                 ]
             }
 
-        # 12) ORDERING (ASC / DESC) com tipo dinâmico
         elif action == "ordering":
             tipo = get_val("tipo") or "modelo"
             ordem = (get_val("ordem") or "DESC").upper()
@@ -476,7 +499,6 @@ def handle_request(action, entity=None, data=None):
             rows = service.relatorio_ordenado(cursor, tipo, ordem)
 
             if tipo == "modelo":
-                # (Modelo, Qtd, Media_Valor)
                 response = {
                     "data": [
                         {
@@ -488,7 +510,6 @@ def handle_request(action, entity=None, data=None):
                     ]
                 }
             else:
-                # (Nome, Qtd_Vendas, Total_Faturado)
                 response = {
                     "data": [
                         {

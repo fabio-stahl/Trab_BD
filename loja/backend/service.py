@@ -134,27 +134,33 @@ def inserir_carro(cursor, chassi, modelo, cor):
 def realizar_negociacao(cursor, matricula, chassi, cpf, data, valor):
     """
     Regras de negócio:
-    - Funcionário deve existir
+    - A matrícula DEVE ser de um VENDEDOR (e, por consequência, um Funcionário).
     - Carro deve existir
     - Cliente deve existir
     - Um mesmo chassi só pode aparecer em UMA negociação.
     """
-    # Funcionário
-    cursor.execute("SELECT 1 FROM Funcionario WHERE Matricula = ?", (matricula,))
-    if cursor.fetchone() is None:
-        raise Exception("Funcionário (Matrícula) inexistente para esta negociação.")
 
-    # Carro
+    cursor.execute("""
+        SELECT f.Nome
+        FROM Vendedor v
+        JOIN Funcionario f ON f.Matricula = v.Matricula
+        WHERE v.Matricula = ?
+    """, (matricula,))
+    row_vendedor = cursor.fetchone()
+    if row_vendedor is None:
+        raise Exception(
+            "Matrícula informada NÃO pertence a um VENDEDOR cadastrado. "
+            "Cadastre o funcionário como Vendedor antes de realizar a negociação."
+        )
+
     cursor.execute("SELECT 1 FROM Carro WHERE Chassi = ?", (chassi,))
     if cursor.fetchone() is None:
         raise Exception("Carro (Chassi) inexistente para esta negociação.")
 
-    # Cliente
     cursor.execute("SELECT 1 FROM Cliente WHERE CPF = ?", (cpf,))
     if cursor.fetchone() is None:
         raise Exception("Cliente (CPF) inexistente para esta negociação.")
 
-    # Chassi único
     cursor.execute("SELECT CPF FROM Negociacao WHERE Chassi = ?", (chassi,))
     row = cursor.fetchone()
     if row is not None:
@@ -166,6 +172,7 @@ def realizar_negociacao(cursor, matricula, chassi, cpf, data, valor):
         INSERT INTO Negociacao (Matricula, Chassi, CPF, Data_Negociacao, Valor_Total)
         VALUES (?, ?, ?, ?, ?)
     """, (matricula, chassi, cpf, data, valor))
+
 
 # --- 3. OPERAÇÕES DE LEITURA (READ) ---
 
@@ -245,6 +252,46 @@ def atualizar_carro(cursor, chassi, modelo, cor):
     )
 
 def atualizar_negociacao(cursor, id_negociacao, matricula, chassi, cpf, data, valor):
+    """
+    Atualiza negociação garantindo:
+    - A matrícula DEVE ser de um VENDEDOR
+    - Carro deve existir
+    - Cliente deve existir
+    - Chassi não pode estar em outra negociação
+    """
+
+    cursor.execute("""
+        SELECT f.Nome
+        FROM Vendedor v
+        JOIN Funcionario f ON f.Matricula = v.Matricula
+        WHERE v.Matricula = ?
+    """, (matricula,))
+    row_vendedor = cursor.fetchone()
+    if row_vendedor is None:
+        raise Exception(
+            "A matrícula informada não pertence a um VENDEDOR. "
+            "Somente vendedores podem estar associados a negociações."
+        )
+    
+    cursor.execute("SELECT 1 FROM Carro WHERE Chassi = ?", (chassi,))
+    if cursor.fetchone() is None:
+        raise Exception("Carro (Chassi) inexistente para esta negociação.")
+
+    cursor.execute("SELECT 1 FROM Cliente WHERE CPF = ?", (cpf,))
+    if cursor.fetchone() is None:
+        raise Exception("Cliente (CPF) inexistente para esta negociação.")
+
+    cursor.execute("""
+        SELECT ID_Negociacao 
+        FROM Negociacao 
+        WHERE Chassi = ? AND ID_Negociacao <> ?
+    """, (chassi, id_negociacao))
+    row = cursor.fetchone()
+    if row is not None:
+        raise Exception(
+            f"Este carro (Chassi {chassi}) já está associado a outra negociação."
+        )
+
     cursor.execute("""
         UPDATE Negociacao 
         SET Matricula = ?, 
@@ -254,7 +301,9 @@ def atualizar_negociacao(cursor, id_negociacao, matricula, chassi, cpf, data, va
             Valor_Total = ?
         WHERE ID_Negociacao = ?
     """, (matricula, chassi, cpf, data, valor, id_negociacao))
+
     print("DEBUG atualizar_negociacao - linhas afetadas:", cursor.rowcount)
+
 
 # --- 5. OPERAÇÕES DE REMOÇÃO (DELETE) ---
 
