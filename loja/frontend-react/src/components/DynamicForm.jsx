@@ -209,9 +209,6 @@ export default function DynamicForm({
           <h4 className="mb-2 font-bold text-gray-700">
             1. Preencha uma amostra:
           </h4>
-          <h4 className="mb-2 font-bold text-gray-700">
-            1. Preencha uma amostra:
-          </h4>
           <div className="input-grid">
             {fields.map((f) => (
               <div className="form-group" key={f.id}>
