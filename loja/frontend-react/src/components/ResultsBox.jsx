@@ -63,8 +63,8 @@ export default function ResultsBox({ result, onClose }) {
           marginBottom: 10,
         }}
       >
-        <h3>Resultado da Operação</h3>
-        <button onClick={onClose} style={{ padding: "5px 10px", cursor: "pointer" }}>
+        <h3 className="text-white">Resultado da Operação</h3>
+        <button onClick={onClose} style={{ padding: "5px 10px", cursor: "pointer", color: "white" }}>
           Fechar
         </button>
       </div>
@@ -75,21 +75,21 @@ export default function ResultsBox({ result, onClose }) {
 
         {/* Mensagens de sucesso */}
         {result.message && (
-          <div style={{ color: "green", fontWeight: "bold", padding: 20 }}>
+          <div style={{ color: "gray-800", fontWeight: "bold", padding: 20 }}>
             {result.message}
           </div>
         )}
 
         {/* Erros */}
         {result.error && (
-          <div style={{ color: "red", fontWeight: "bold", padding: 20 }}>
+          <div style={{ color: "gray-800", fontWeight: "bold", padding: 20 }}>
             {`ERRO: ${result.error}`}
           </div>
         )}
 
         {/* Caso não seja data, nem erro, nem message */}
         {!resultData && !result.error && !result.message && (
-          <pre style={{ padding: 20 }}>{JSON.stringify(result, null, 2)}</pre>
+          <pre style={{ padding: 20, color: "black", fontWeight: "bold"  }}>{JSON.stringify(result, null, 2)}</pre>
         )}
       </div>
     </div>

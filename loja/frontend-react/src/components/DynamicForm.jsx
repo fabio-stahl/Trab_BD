@@ -149,7 +149,7 @@ export default function DynamicForm({
   // Render do select de entidade (reaproveitável)
   const renderEntitySelect = () => (
     <div className="form-group" style={{ marginBottom: 16 }}>
-      <label className="text-gray-700 font-bold mb-2">Tabela Alvo:</label>
+      <label className="text-white font-bold mb-2">Tabela Alvo:</label>
       <select
         value={selectedEntity}
         onChange={handleEntitySelect}
@@ -205,8 +205,9 @@ export default function DynamicForm({
       <div>
         {renderEntitySelect()}
 
-        <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-4">
-          <h4 className="mb-2 font-bold text-gray-700">
+        <div className="p-6 rounded mb-4 bg-transparent">
+
+          <h4 className="mb-2 font-bold text-white">
             1. Preencha uma amostra:
           </h4>
           <div className="input-grid">
@@ -228,22 +229,22 @@ export default function DynamicForm({
           <button
             type="button"
             onClick={addToQueue}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+            className="btn-primary"
           >
-            + Adicionar à Fila
+            +    Adicionar à Fila
           </button>
         </div>
 
         {error && <p className="text-red-600 mb-3">{error}</p>}
 
         {massQueue.length > 0 && (
-          <div className="mb-6">
-            <h4 className="mb-2 font-bold text-gray-700">
+          <div className="mb-6 ">
+            <h4 className="mb-2 font-bold text-white">
               2. Itens na Fila ({massQueue.length}):
             </h4>
             <div className="overflow-x-auto border rounded">
               <table className="w-full text-sm text-left">
-                <thead className="bg-gray-200 text-gray-700">
+                <thead className="bg-gray-200 text-gray-900">
                   <tr>
                     {fields.map((f) => (
                       <th key={f.id} className="p-2">
@@ -252,7 +253,7 @@ export default function DynamicForm({
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-white">
                   {massQueue.map((row, idx) => (
                     <tr key={idx} className="border-b">
                       {row.map((cell, cIdx) => (
@@ -269,7 +270,7 @@ export default function DynamicForm({
         )}
 
         {massQueue.length > 0 && (
-          <button className="btn-primary w-full" onClick={submitForm}>
+          <button className="btn-primary w-full top-10" onClick={submitForm}>
             Executar Carga em Massa ({massQueue.length} itens)
           </button>
         )}
@@ -338,10 +339,10 @@ export default function DynamicForm({
     };
 
     return (
-      <form onSubmit={handleExecuteQuantifiers}>
-        <div className="bg-purple-50 p-4 rounded border border-purple-200 mb-4">
-          <h4 className="font-bold text-purple-800 mb-2">Quantificadores (Subconsultas)</h4>
-          <p className="text-sm text-purple-600 mb-4">
+      <form onSubmit={handleExecuteQuantifiers} >
+        <div className="bg-transparent p-4  mb-4">
+          <h4 className="font-bold text-white mb-2">Quantificadores (Subconsultas)</h4>
+          <p className="text-sm text-white mt-8">
             Simulação de cláusulas ANY e ALL usando agregações (AVG/MAX).
           </p>
 
@@ -357,7 +358,7 @@ export default function DynamicForm({
             </select>
           </div>
 
-          <div className="mt-2 text-xs text-gray-500 italic mb-4">
+          <div className="mt-2 text-xs text-white italic mb-4">
             {quantifierType === "any" && "Exibe vendas que foram excepcionais comparadas ao histórico do próprio funcionário (Correlacionada)."}
             {quantifierType === "all" && "Exibe a 'Elite': Funcionários (Gerentes/Outros) que ganham mais que o Vendedor mais bem pago."}
           </div>

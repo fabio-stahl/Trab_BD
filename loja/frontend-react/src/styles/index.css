@@ -70,13 +70,15 @@ header { margin-bottom: 30px; }
 
 /* --- CARDS (CONTAINERS BRANCOS) --- */
 .card {
-    background: white;
+    background: rgba(255, 255, 255, 0.15); /* transparente */
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     margin-bottom: 20px;
+    backdrop-filter: blur(5px); /* efeito blur no fundo */
     transition: transform 0.2s;
 }
+
 
 /* --- FORMULÁRIOS E INPUTS --- */
 .form-group { 
@@ -88,7 +90,7 @@ header { margin-bottom: 30px; }
 .form-group label { 
     margin-bottom: 8px; 
     font-weight: 500; 
-    color: #34495e; 
+    color: #ffffff; 
     font-size: 0.9rem;
 }
 
@@ -119,7 +121,8 @@ header { margin-bottom: 30px; }
 
 /* --- BOTÕES --- */
 .btn-primary {
-    background-color: #e74c3c;
+     background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
     color: white;
     border: none;
     padding: 12px 30px;
@@ -132,7 +135,7 @@ header { margin-bottom: 30px; }
     letter-spacing: 0.5px;
 }
 
-.btn-primary:hover { background-color: #c0392b; }
+.btn-primary:hover { background-color: #3ba43a; }
 .btn-primary:active { transform: scale(0.98); }
 
 /* --- ÁREA DE RESULTADOS E TABELAS --- */
