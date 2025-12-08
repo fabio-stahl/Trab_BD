@@ -1,0 +1,552 @@
+// src/components/DynamicForm.jsx
+import React, { useState, useEffect } from "react";
+import { entities } from "../data/entities";
+
+export default function DynamicForm({
+  action,
+  entity,
+  onEntityChange,
+  onExecute,
+}) {
+  const [selectedEntity, setSelectedEntity] = useState(entity || "cliente");
+  const [values, setValues] = useState({});
+  const [quantifierType, setQuantifierType] = useState("any");
+  const [massQueue, setMassQueue] = useState([]);
+  const [error, setError] = useState("");
+  const [reportType, setReportType] = useState("inner");
+
+  // Atualiza selectedEntity se a prop `entity` mudar externamente
+  useEffect(() => {
+    if (entity && entity !== selectedEntity) {
+      setSelectedEntity(entity);
+      setValues({});
+      setMassQueue([]);
+      setError("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entity]);
+
+  // Resetar estados ao mudar de ação ou entidade selecionada
+  useEffect(() => {
+    setValues({});
+    setMassQueue([]);
+    setError("");
+  }, [action, selectedEntity]);
+
+  // Campos da entidade selecionada (fallback para array vazio)
+  const fields = entities[selectedEntity] || [];
+
+  function handleInputChange(e) {
+    const { name, value } = e.target;
+    setValues((s) => ({ ...s, [name]: value }));
+    setError("");
+  }
+
+  function handleEntitySelect(e) {
+    const newEntity = e.target.value;
+    setSelectedEntity(newEntity);
+    setValues({});
+    setMassQueue([]);
+    setError("");
+    if (onEntityChange) onEntityChange(newEntity);
+  }
+
+  // Validação geral do formulário para add/update
+  const isAddOrUpdate = ["add", "update"].includes(action);
+  const isFormValid =
+    !isAddOrUpdate ||
+    fields.length === 0 ||
+    fields.every((f) => {
+      const v = values[f.id];
+      return v !== undefined && String(v).trim() !== "";
+    });
+
+  // Adicionar à fila (massa)
+  function addToQueue(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    setError("");
+
+    const hasEmpty = fields.some((f) => {
+      const v = values[f.id];
+      return v === undefined || String(v).trim() === "";
+    });
+
+    if (hasEmpty) {
+      setError("Preencha todos os campos antes de adicionar à fila.");
+      return;
+    }
+
+    // Formata linha na ordem correta (usar string vazia como fallback)
+    const rowAsArray = fields.map((field) =>
+      values[field.id] !== undefined ? values[field.id] : ""
+    );
+
+    setMassQueue((q) => [...q, rowAsArray]);
+    setValues({});
+  }
+
+  // Envio do formulário (submit)
+  function submitForm(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    setError("");
+
+    const payloadData = {};
+
+    if (["add", "update"].includes(action)) {
+      const missingFields = fields.filter((f) => {
+        const v = values[f.id];
+        return v === undefined || String(v).trim() === "";
+      });
+
+      if (missingFields.length > 0) {
+        setError("Preencha todos os campos antes de executar a operação.");
+        return;
+      }
+
+      fields.forEach((f) => {
+        payloadData[f.id] = values[f.id];
+      });
+    } else if (["remove", "search"].includes(action)) {
+      payloadData.id = values.id || "";
+    } else if (action === "substring") {
+      payloadData.termo = values.termo || "";
+    } else if (action === "grouping_having") {
+      // Relatório com GROUP BY + HAVING
+      payloadData.minimo = values.minimo || 0;
+    } else if (action === "ordering") {
+      // Relatório com ordenação ASC/DESC
+      payloadData.tipo = values.tipo || "modelo";
+      payloadData.ordem = (values.ordem || "DESC").toUpperCase();
+    } else if (action === "mass") {
+      const pluralMap = {
+        cliente: "clientes",
+        carro: "carros",
+        funcionario: "funcionarios",
+        negociacao: "negociacoes",
+      };
+
+      if (!massQueue.length) {
+        setError("Adicione pelo menos um item à fila antes de executar.");
+        return;
+      }
+
+      const key = pluralMap[selectedEntity] || selectedEntity + "s";
+      payloadData[key] = massQueue;
+    } else {
+      // grouping, advanced, quantifiers etc. usam direto o `values`
+      Object.assign(payloadData, values);
+    }
+
+    if (onExecute) {
+      onExecute({
+        action,
+        entity: selectedEntity,
+        data: payloadData,
+      });
+    }
+  }
+
+  // Render do select de entidade (reaproveitável)
+  const renderEntitySelect = () => (
+    <div className="form-group" style={{ marginBottom: 16 }}>
+      <label className="text-white font-bold mb-2">Tabela Alvo:</label>
+      <select
+        value={selectedEntity}
+        onChange={handleEntitySelect}
+        className="form-control"
+      >
+        <option value="cliente">Cliente</option>
+        <option value="carro">Carro</option>
+        <option value="funcionario">Funcionário</option>
+        <option value="negociacao">Negociação</option>
+        {action !== "mass" && <option value="vendedor">Vendedor</option>}
+        {action !== "mass" && <option value="gerente">Gerente</option>}
+        {action !== "mass" && <option value="telefone">Telefone</option>}
+      </select>
+    </div>
+  );
+
+  // 1) ADD / UPDATE
+  if (["add", "update"].includes(action)) {
+    return (
+      <form onSubmit={submitForm}>
+        {renderEntitySelect()}
+
+        <div className="input-grid">
+          {fields.map((f) => (
+            <div className="form-group" key={f.id}>
+              <label>{f.label}</label>
+              <input
+                name={f.id}
+                type={f.type}
+                className="form-control"
+                placeholder={f.label}
+                value={values[f.id] || ""}
+                onChange={handleInputChange}
+              />
+            </div>
+          ))}
+        </div>
+
+        {error && <p className="text-red-600 mt-2">{error}</p>}
+
+        <div style={{ marginTop: 20 }}>
+          <button className="btn-primary" type="submit" disabled={!isFormValid}>
+            {action === "add" ? "Adicionar" : "Atualizar"}
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  // 2) MASS LOAD
+  if (action === "mass") {
+    return (
+      <div>
+        {renderEntitySelect()}
+
+        <div className="p-6 rounded mb-4 bg-transparent">
+
+          <h4 className="mb-2 font-bold text-white">
+            1. Preencha uma amostra:
+          </h4>
+          <div className="input-grid">
+            {fields.map((f) => (
+              <div className="form-group" key={f.id}>
+                <label>{f.label}</label>
+                <input
+                  name={f.id}
+                  type={f.type}
+                  className="form-control"
+                  placeholder={f.label}
+                  value={values[f.id] || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={addToQueue}
+            className="btn-primary"
+          >
+            +    Adicionar à Fila
+          </button>
+        </div>
+
+        {error && <p className="text-red-600 mb-3">{error}</p>}
+
+        {massQueue.length > 0 && (
+          <div className="mb-6 ">
+            <h4 className="mb-2 font-bold text-white">
+              2. Itens na Fila ({massQueue.length}):
+            </h4>
+            <div className="overflow-x-auto border rounded">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-200 text-gray-900">
+                  <tr>
+                    {fields.map((f) => (
+                      <th key={f.id} className="p-2">
+                        {f.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white">
+                  {massQueue.map((row, idx) => (
+                    <tr key={idx} className="border-b">
+                      {row.map((cell, cIdx) => (
+                        <td key={cIdx} className="p-2">
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {massQueue.length > 0 && (
+          <button className="btn-primary w-full top-10" onClick={submitForm}>
+            Executar Carga em Massa ({massQueue.length} itens)
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // 3) REMOVE / SEARCH
+  if (["remove", "search"].includes(action)) {
+    return (
+      <form onSubmit={submitForm}>
+        {renderEntitySelect()}
+        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+          <label>Identificador (CPF, Chassi, Matrícula ou ID)</label>
+          <input
+            name="id"
+            className="form-control"
+            placeholder="Digite o ID..."
+            value={values.id || ""}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <button className="btn-primary" type="submit">
+            Executar
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  // 4) SUBSTRING
+  if (action === "substring") {
+    return (
+      <form onSubmit={submitForm}>
+        {renderEntitySelect()}
+        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+          <label>Termo de Busca</label>
+          <input
+            name="termo"
+            className="form-control"
+            placeholder="Digite parte do nome/modelo..."
+            value={values.termo || ""}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <button className="btn-primary" type="submit">
+            Pesquisar
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+   if (action === "quantifiers") {
+    const handleExecuteQuantifiers = (e) => {
+      e.preventDefault();
+      if (onExecute) {
+        onExecute({
+          action,
+          entity: selectedEntity,
+          data: { quantifier_type: quantifierType }, // Envia "any" ou "all"
+        });
+      }
+    };
+
+    return (
+      <form onSubmit={handleExecuteQuantifiers} >
+        <div className="bg-transparent p-4  mb-4">
+          <h4 className="font-bold text-white mb-2">Quantificadores (Subconsultas)</h4>
+          <p className="text-sm text-white mt-8">
+            Simulação de cláusulas ANY e ALL usando agregações (AVG/MAX).
+          </p>
+
+          <div className="form-group">
+            <label className="font-semibold text-gray-700">Tipo de Comparação:</label>
+            <select
+              className="form-control"
+              value={quantifierType}
+              onChange={(e) => setQuantifierType(e.target.value)}
+            >
+              <option value="any">1. ANY</option>
+              <option value="all">2. ALL</option>
+            </select>
+          </div>
+
+          <div className="mt-2 text-xs text-white italic mb-4">
+            {quantifierType === "any" && "Exibe vendas que foram excepcionais comparadas ao histórico do próprio funcionário (Correlacionada)."}
+            {quantifierType === "all" && "Exibe a 'Elite': Funcionários (Gerentes/Outros) que ganham mais que o Vendedor mais bem pago."}
+          </div>
+
+          <button className="btn-primary w-full" type="submit">
+            Comparar Dados
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+
+
+  // 5) RELATÓRIOS DE JOIN
+  if (action === "advanced") {
+    const handleExecuteAdvanced = (e) => {
+      e.preventDefault();
+      if (onExecute) {
+        onExecute({
+          action,
+          entity: selectedEntity,
+          data: { report_type: reportType },
+        });
+      }
+    };
+
+    return (
+      <form onSubmit={handleExecuteAdvanced}>
+        <div className="bg-blue-50 p-4 rounded border border-blue-200 mb-4">
+          <h4 className="font-bold text-blue-800 mb-2">
+            Relatórios de Junção (JOINs)
+          </h4>
+          <p className="text-sm text-blue-600 mb-4">
+            Visualize como os dados se relacionam entre tabelas diferentes.
+          </p>
+
+          <div className="form-group">
+            <label className="font-semibold text-gray-700">
+              Selecione o Tipo de Join:
+            </label>
+            <select
+              className="form-control"
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value)}
+            >
+              <option value="inner">
+                1. INNER JOIN (Apenas Vendas Concretizadas)
+              </option>
+              <option value="left">
+                2. LEFT JOIN (Todos Funcionários, mesmo sem vendas)
+              </option>
+              <option value="right">
+                3. RIGHT JOIN (Todos Carros, mesmo não vendidos)
+              </option>
+            </select>
+          </div>
+
+          {/* Pequena legenda explicativa dinâmica */}
+          <div className="mt-2 text-xs text-gray-500 italic">
+            {reportType === "inner" &&
+              "Exibe a intersecção: Só aparece quem vendeu."}
+            {reportType === "left" &&
+              "Prioridade na esquerda: Lista equipe completa e preenche NULL onde não houve venda."}
+            {reportType === "right" &&
+              "Prioridade na direita: Lista estoque completo de carros e mostra vendas se existirem."}
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <button className="btn-primary w-full" type="submit">
+              Visualizar Dados
+            </button>
+          </div>
+        </div>
+      </form>
+    );
+  }
+
+  // 5) GROUPING (AGRUPAMENTO DE VENDAS) – sem "Tabela Alvo"
+  if (action === "grouping") {
+    return (
+      <form onSubmit={submitForm}>
+        <div className="form-group">
+          <label>Tipo de Agrupamento</label>
+          <select
+            name="tipo"
+            className="form-control"
+            value={values.tipo || "modelo"}
+            onChange={handleInputChange}
+          >
+            <option value="modelo">Vendas por Modelo</option>
+            <option value="vendedor">Vendas por Vendedor (com HAVING fixo &gt; 0)</option>
+            <option value="cor">Vendas por Cor do Carro</option>
+            <option value="cliente">Vendas por Cliente</option>
+            <option value="funcionario">Vendas por Funcionário</option>
+            <option value="data">Vendas por Data</option>
+          </select>
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <button className="btn-primary" type="submit">
+            Gerar Relatório de Agrupamento
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  // 6) GROUPING + HAVING (mínimo de faturamento)
+  if (action === "grouping_having") {
+    return (
+      <form onSubmit={submitForm}>
+        {renderEntitySelect()}
+        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+          <label>Valor mínimo de faturamento (HAVING)</label>
+          <input
+            name="minimo"
+            type="number"
+            className="form-control"
+            placeholder="Ex: 10000"
+            value={values.minimo || ""}
+            onChange={handleInputChange}
+          />
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <button className="btn-primary" type="submit">
+            Gerar Relatório (GROUP BY + HAVING)
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  // 7) ORDERING (ASC / DESC)
+  if (action === "ordering") {
+    return (
+      <form onSubmit={submitForm}>
+        {renderEntitySelect()}
+
+        <div className="form-group">
+          <label>Tipo de Relatório</label>
+          <select
+            name="tipo"
+            className="form-control"
+            value={values.tipo || "modelo"}
+            onChange={handleInputChange}
+          >
+            <option value="modelo">Vendas por Modelo (média de valor)</option>
+            <option value="vendedor">Vendas por Vendedor (total faturado)</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Ordenação</label>
+          <select
+            name="ordem"
+            className="form-control"
+            value={values.ordem || "DESC"}
+            onChange={handleInputChange}
+          >
+            <option value="ASC">Ascendente (menor → maior)</option>
+            <option value="DESC">Descendente (maior → menor)</option>
+          </select>
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <button className="btn-primary" type="submit">
+            Gerar Relatório Ordenado
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  // 8) AÇÕES SIMPLES (INIT, advanced, quantifiers etc.)
+  return (
+    <div>
+      <p className="mb-4 text-gray-600">
+        Esta ação não requer parâmetros de entrada. Clique para processar.
+      </p>
+      <button
+        className="btn-primary"
+        onClick={() =>
+          onExecute && onExecute({ action, entity: selectedEntity, data: {} })
+        }
+      >
+        Executar {action}
+      </button>
+    </div>
+  );
+}
