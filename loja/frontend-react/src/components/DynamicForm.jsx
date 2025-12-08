@@ -388,16 +388,16 @@ export default function DynamicForm({
 
     return (
       <form onSubmit={handleExecuteAdvanced}>
-        <div className="bg-blue-50 p-4 rounded border border-blue-200 mb-4">
-          <h4 className="font-bold text-blue-800 mb-2">
+        <div className="bg-transparent p-4  mb-4">
+          <h4 className="font-bold text-white mb-2">
             Relatórios de Junção (JOINs)
           </h4>
-          <p className="text-sm text-blue-600 mb-4">
+          <p className="text-sm text-white mb-4">
             Visualize como os dados se relacionam entre tabelas diferentes.
           </p>
 
           <div className="form-group">
-            <label className="font-semibold text-gray-700">
+            <label className="font-semibold text-white">
               Selecione o Tipo de Join:
             </label>
             <select
@@ -418,7 +418,7 @@ export default function DynamicForm({
           </div>
 
           {/* Pequena legenda explicativa dinâmica */}
-          <div className="mt-2 text-xs text-gray-500 italic">
+          <div className="mt-2 text-xs text-white italic">
             {reportType === "inner" &&
               "Exibe a intersecção: Só aparece quem vendeu."}
             {reportType === "left" &&
